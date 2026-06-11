@@ -7,6 +7,9 @@ explains the `DataChunk`/`Vector` types in the
 [`../duckdb-types-glossary.md`](../duckdb-types-glossary.md) and the vectorized
 execution model from [`../../weeks/week1-concepts.md`](../../weeks/week1-concepts.md).
 
+> **Prime around:** Week 1 — foundational background; read alongside the Week 1
+> DB-theory readings, before tracing code.
+
 ## Same table, two physical layouts
 
 Take a tiny table:

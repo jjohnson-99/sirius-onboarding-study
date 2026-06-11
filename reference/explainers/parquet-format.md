@@ -7,6 +7,9 @@ data, and why there's a pile of GPU decoders in `src/cuda/scan/`. Parquet is the
 embodiment of the columnar idea in
 [`columnar-vs-row-storage.md`](columnar-vs-row-storage.md).
 
+> **Prime around:** Week 5 (the scan subsystem) — or any time a query you're tracing
+> hits the parquet scan.
+
 ## The layout, top to bottom
 
 A Parquet file is a **nested hierarchy**, columnar at its core:

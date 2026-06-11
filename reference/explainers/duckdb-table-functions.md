@@ -6,6 +6,9 @@ confusing until then. It comes straight out of the
 it's the structural backbone of `sirius_extension.cpp`
 ([file-map](../../file-maps/sirius_extension.md)). Let's unpack it.
 
+> **Prime around:** Week 2 (Days 1–2) — `sirius_extension.cpp` is wall-to-wall
+> bind/execute pairs.
+
 ## Why "table"
 
 SQL has three kinds of functions, distinguished by **what they return**:

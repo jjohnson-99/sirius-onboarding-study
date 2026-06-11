@@ -8,6 +8,9 @@ hand-written-loop speed. It's the processing model behind DuckDB's `DataChunk`
 "operator" works on batches the way [`../../weeks/week1-concepts.md`](../../weeks/week1-concepts.md)
 describes.
 
+> **Prime around:** Week 1 — read with the CMU "processing models" lecture and
+> `week1-concepts`.
+
 ## The problem it solves
 
 The textbook query engine is the **Volcano / iterator model**: every operator exposes
