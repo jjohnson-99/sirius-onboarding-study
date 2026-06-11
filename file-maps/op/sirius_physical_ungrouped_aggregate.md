@@ -1,13 +1,13 @@
 # `op/sirius_physical_ungrouped_aggregate.cpp` → Operator Map (loop-closer)
 
-Companion for Week 2, **Days 4–5** of [`onboarding-path.md`](../../onboarding-path.md),
+Companion for Week 2, **Days 4–5** of [`onboarding-path.md`](onboarding-path.md),
 tagged **read** — the operator that "closes the loop" on the end-to-end trace. Read
 with the `UNGROUPED_AGGREGATE` / `MERGE_AGGREGATE` entries in
 `docs/super-sirius/operators.md` and the `UNGROUPED_AGGREGATE` splitting diagram in
 `docs/super-sirius/physical-plan-generation.md` (Part 3). Load cuDF reduce/aggregation
 docs via `/module-context`.
 
-> Paths relative to the Sirius repo root (`../../sirius/`). Lines as of 2026-06-10.
+> Paths relative to the Sirius repo root. Lines as of 2026-06-10.
 
 ## A note on the target query
 
@@ -23,7 +23,7 @@ this as `SELECT SUM(l_quantity) FROM lineitem` (no GROUP BY) — the simpler cou
 
 A pipeline runs in parallel over many input batches, so you can't sum a column in one
 shot. Sirius splits aggregation into two operators (the engine creates the pair in
-`construct_sirius_specific_operator`, see [`../sirius_engine.md`](../sirius_engine.md)):
+`construct_sirius_specific_operator`, see [`file-maps/sirius_engine.md`](file-maps/sirius_engine.md)):
 
 1. **`sirius_physical_ungrouped_aggregate`** (`UNGROUPED_AGGREGATE`) — runs per input
    batch, producing a **partial** aggregate (one row): `SUM` of this batch, `COUNT` of
@@ -111,4 +111,4 @@ traced a query from SQL string (`sirius_extension`) through lifecycle
 (`sirius_interface`), build/launch (`sirius_engine`), translation (plan generator),
 ownership (`sirius_context`), and down to the GPU `cudf::reduce` that computes the
 answer. That's the Week 2 checkpoint — synthesized in
-[`../../weeks/week2-concepts.md`](../../weeks/week2-concepts.md).
+[`weeks/week2-concepts.md`](weeks/week2-concepts.md).

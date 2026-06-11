@@ -4,8 +4,8 @@ If columnar storage ([`columnar-vs-row-storage.md`](columnar-vs-row-storage.md))
 about how data sits *still*, vectorized execution is about how it *moves* through the
 engine — and it's the trick that lets an interpreted SQL engine run at close to
 hand-written-loop speed. It's the processing model behind DuckDB's `DataChunk`
-([`../duckdb-types-glossary.md`](../duckdb-types-glossary.md)) and the reason a Sirius
-"operator" works on batches the way [`../../weeks/week1-concepts.md`](../../weeks/week1-concepts.md)
+([`reference/duckdb-types-glossary.md`](reference/duckdb-types-glossary.md)) and the reason a Sirius
+"operator" works on batches the way [`weeks/week1-concepts.md`](weeks/week1-concepts.md)
 describes.
 
 > **Prime around:** Week 1 — read with the CMU "processing models" lecture and
@@ -93,11 +93,11 @@ just with a much **wider** vector:
   overhead** (controlled by config like `scan_task_batch_size`). On a GPU you want the
   batch *big*, the opposite pressure from the CPU's cache limit.
 - An operator's `execute()` (see
-  [`../../file-maps/op/sirius_physical_operator.md`](../../file-maps/op/sirius_physical_operator.md))
+  [`file-maps/op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md))
   receives `cudf::table_view`s and calls a cuDF primitive that launches **one kernel over
   the whole column** — e.g. `cudf::reduce(l_quantity, SUM)` is a single massively-parallel
   pass, and the limit operator's `cudf::slice`
-  ([`../../file-maps/op/sirius_physical_limit.md`](../../file-maps/op/sirius_physical_limit.md))
+  ([`file-maps/op/sirius_physical_limit.md`](file-maps/op/sirius_physical_limit.md))
   is the same idea. That *is* a vectorized operator, with the vector = a GPU column.
 
 So when Week 1 says Sirius "takes the vectorized idea to its limit," this is the precise
@@ -107,8 +107,8 @@ sense: the unit of work is a whole GPU column, and the inner loop is a CUDA kern
 
 - [`columnar-vs-row-storage.md`](columnar-vs-row-storage.md) — the storage layout
   vectorized execution requires.
-- [`../../weeks/week1-concepts.md`](../../weeks/week1-concepts.md) — processing models
+- [`weeks/week1-concepts.md`](weeks/week1-concepts.md) — processing models
   (Volcano vs. vectorized) and the operator model, in the Week 1 context.
-- [`../duckdb-types-glossary.md`](../duckdb-types-glossary.md) — `DataChunk` / `Vector`.
+- [`reference/duckdb-types-glossary.md`](reference/duckdb-types-glossary.md) — `DataChunk` / `Vector`.
 - *Optional paper:* "MonetDB/X100: Hyper-Pipelining Query Execution" — the origin of
   vectorized execution (in the onboarding-path resource list).

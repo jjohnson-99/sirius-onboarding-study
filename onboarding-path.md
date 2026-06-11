@@ -10,13 +10,13 @@ non-trivial contributions to Sirius. Calibrated to ~34 hrs/week (6 hrs/weekday +
 
 **Working rule:** Never read a Sirius doc cold. For each doc below, first spend
 20–30 min on the matching database concept (see [Resources](#resources)) so the
-doc lands on prepared ground. Keep [`docs/glossary.md`](../sirius/docs/glossary.md)
+doc lands on prepared ground. Keep [`docs/glossary.md`](docs/glossary.md)
 open as your term anchor, and use an LLM for *targeted* questions once you can point
 at specific files and line numbers.
 
 > Note: source/doc paths in this file (e.g. `src/op/...`, `docs/super-sirius/...`)
-> are relative to the **Sirius repo root**, which lives alongside this folder at
-> `../sirius/`.
+> are relative to the **Sirius repo root**. Links to other study notes are relative to
+> this `sirius-onboarding-study` root.
 
 **Effort tags:** some files carry a depth tag — *line count is a poor proxy for
 effort, so these signal how hard to lean in:*

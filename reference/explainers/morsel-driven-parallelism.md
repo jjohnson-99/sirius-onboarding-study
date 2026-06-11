@@ -1,7 +1,7 @@
 # Morsel-Driven Parallelism
 
 > **Prime around:** Week 4. Read alongside the Leis et al. (2014) paper the
-> [onboarding plan](../../onboarding-path.md) schedules for Weeks 4–5 — it's the design
+> [onboarding plan](onboarding-path.md) schedules for Weeks 4–5 — it's the design
 > philosophy behind Sirius's `task_scheduler` / `task_creator`, which you read that week.
 
 Once an engine is columnar, vectorized, and push-based, one question remains: **how do
@@ -89,7 +89,7 @@ Sirius isn't a line-by-line implementation of the Leis paper, but its task-based
 So Sirius generalizes the model: the "cores" are GPU streams/workers spread across
 multiple GPUs; the "morsel" is a GPU-resident batch; the scheduler is the
 `task_scheduler` + `task_creator`; and the readiness/barrier logic you saw in
-[`../../file-maps/op/sirius_physical_operator.md`](../../file-maps/op/sirius_physical_operator.md)
+[`file-maps/op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md)
 (`get_next_task_hint`) is how it decides a morsel/task is ready to run. This is exactly
 why the inter-pipeline handoff is *push-into-a-port-then-scheduled* rather than pull — a
 work-stealing scheduler needs a buffer to steal from. The onboarding plan calls the Leis
@@ -101,7 +101,7 @@ paper "the scheduler's design philosophy" for precisely this reason.
   scheduler substrate morsel-driven scheduling runs on.
 - [`vectorized-execution.md`](vectorized-execution.md) — vectors vs. morsels (execution
   unit vs. scheduling unit).
-- [`../../weeks/week2-concepts.md`](../../weeks/week2-concepts.md) — Step 8 (task
+- [`weeks/week2-concepts.md`](weeks/week2-concepts.md) — Step 8 (task
   creation) and the Week 4–6 subsystems this sets up.
 - *Paper:* Leis et al., "Morsel-Driven Parallelism: A NUMA-Aware Query Evaluation
   Framework for the Many-Core Age" (2014).

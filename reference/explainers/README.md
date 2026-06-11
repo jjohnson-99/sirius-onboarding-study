@@ -6,7 +6,7 @@ don't teach. Each file is a standalone, question-driven explainer (one topic per
 combined only when two ideas are genuinely one topic). Written for a strong-C++,
 new-to-databases reader; cross-linked to the maps where the concept shows up in code.
 
-Ordered roughly by **when to prime** (the week of [`../../onboarding-path.md`](../../onboarding-path.md)
+Ordered roughly by **when to prime** (the week of [`onboarding-path.md`](onboarding-path.md)
 where the concept first earns its keep). Each file repeats its own "Prime around" cue up
 top. You'll also naturally reach for one whenever a map references a concept you want
 grounded — the week is a *suggestion*, not a gate.
@@ -20,3 +20,4 @@ grounded — the week is a *suggestion*, not a gate.
 | [client-connections.md](client-connections.md) | Week 2 | The database → connection → query hierarchy, what's per-database (`DBConfig`) vs per-connection (`ClientConfig`), Sirius's shared/serialized runtime, and the per-query optimizer disable/restore lifecycle as a worked example. |
 | [morsel-driven-parallelism.md](morsel-driven-parallelism.md) | Week 4 | How analytical engines spread work across cores/GPUs — morsels + work-stealing vs. plan-time exchange operators — and how it maps onto Sirius's task scheduler/creator. |
 | [parquet-format.md](parquet-format.md) | Week 5 | The Parquet file layout (row groups → column chunks → pages → footer), why the footer enables cheap schema + column pruning + row-group skipping, and how Sirius decodes it on the GPU. |
+| [mvcc-concurrency-control.md](mvcc-concurrency-control.md) | Optional | Concurrency control & MVCC — snapshot isolation, readers-don't-block-writers, why DuckDB uses it, and why Sirius *doesn't* (it inherits DuckDB's MVCC; its own "concurrency" is GPU scheduling). Background the plan defers. |

@@ -1,17 +1,17 @@
 # `op/sirius_physical_duckdb_scan.cpp` → Operator Map (tiny)
 
-Companion for Week 2, **Days 4–5** of [`onboarding-path.md`](../../onboarding-path.md).
+Companion for Week 2, **Days 4–5** of [`onboarding-path.md`](onboarding-path.md).
 Tagged **tiny** (~130 lines, almost all constructor). Read with the `DUCKDB_SCAN`
 entry in `docs/super-sirius/operators.md`. This is the **source** operator for the
 target query's `lineitem` scan.
 
-> Paths relative to the Sirius repo root (`../../sirius/`). Lines as of 2026-06-10.
+> Paths relative to the Sirius repo root. Lines as of 2026-06-10.
 
 ## Where this sits
 
 For `SELECT ... FROM lineitem ...`, the plan generator emits a `TABLE_SCAN`; the
 engine's `construct_sirius_specific_operator`
-([`../sirius_engine.md`](../sirius_engine.md), line 226) sees the table function is
+([`file-maps/sirius_engine.md`](file-maps/sirius_engine.md), line 226) sees the table function is
 `seq_scan` and builds a **`sirius_physical_duckdb_scan`** — a sequential scan that
 borrows DuckDB's own execution engine to read the table, then hands rows to the GPU.
 (If `lineitem` were a parquet file, it'd be `PARQUET_SCAN` instead.) It is the

@@ -108,7 +108,7 @@ Pulling it together, Parquet is purpose-built for OLAP scans:
 4. GPU **decoders** (`src/cuda/scan/`) decompress those bytes into a `cudf::column` on
    the device — no CPU round-trip.
 5. From there it's an ordinary GPU pipeline (filter → … ), exactly the operator flow from
-   [`../../weeks/week2-concepts.md`](../../weeks/week2-concepts.md).
+   [`weeks/week2-concepts.md`](weeks/week2-concepts.md).
 
 Full scan-subsystem detail is Week 5 (`docs/super-sirius/scan.md`); this is the on-disk
 shape that subsystem is built around.

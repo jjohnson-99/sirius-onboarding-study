@@ -1,12 +1,12 @@
 # `op/sirius_physical_limit.cpp` → Operator Map (warm-up)
 
-Companion for Week 2, **Days 4–5** of [`onboarding-path.md`](../../onboarding-path.md).
+Companion for Week 2, **Days 4–5** of [`onboarding-path.md`](onboarding-path.md).
 The plan calls this a **warm-up** (tiny, ~130 lines): the simplest operator that
 actually *does* something on the GPU, so it's the cleanest first look at the
 `execute()` pattern from [`sirius_physical_operator.md`](sirius_physical_operator.md).
 Read with the `STREAMING_LIMIT` entry in `docs/super-sirius/operators.md`.
 
-> Paths relative to the Sirius repo root (`../../sirius/`). Lines as of 2026-06-10.
+> Paths relative to the Sirius repo root. Lines as of 2026-06-10.
 
 ## Where this sits
 
@@ -60,7 +60,7 @@ expression executor. Internalize it here where there's nothing else going on.
   `[start:end)` without copying data.
 - Everything else (`pipelineable_operator_data`, `gpu_table_representation`,
   `cuda_stream_view`) is in [`sirius_physical_operator.md`](sirius_physical_operator.md)
-  / [`duckdb-types-glossary.md`](../../reference/duckdb-types-glossary.md).
+  / [`duckdb-types-glossary.md`](reference/duckdb-types-glossary.md).
 
 ## Takeaway
 

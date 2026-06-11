@@ -1,12 +1,12 @@
 # `op/sirius_physical_operator.cpp` → Base-Interface Map
 
-Companion for Week 2, **Days 4–5** of [`onboarding-path.md`](../../onboarding-path.md),
+Companion for Week 2, **Days 4–5** of [`onboarding-path.md`](onboarding-path.md),
 tagged **read**. Read `src/op/sirius_physical_operator.cpp` (+ the header
 `src/include/op/sirius_physical_operator.hpp`) with the **"Base Class"** section of
 `docs/super-sirius/operators.md` open. Read this **before** the concrete operators —
 it's the contract they all implement.
 
-> Source/doc paths are relative to the Sirius repo root (`../../sirius/`). Line
+> Source/doc paths are relative to the Sirius repo root. Line
 > numbers accurate as of 2026-06-10; re-grep if the file moved.
 
 ## Where this sits

@@ -1,11 +1,11 @@
 # `sirius_context.hpp` → Ownership & Lifecycle Map
 
-Companion for Week 2, **Day 3** of [`onboarding-path.md`](../onboarding-path.md),
+Companion for Week 2, **Day 3** of [`onboarding-path.md`](onboarding-path.md),
 tagged **read closely**. Read `src/include/sirius_context.hpp` (the header is the
 point; `src/sirius_context.cpp` holds the implementations) alongside the **"Ownership
 Hierarchy"** section of `docs/super-sirius/architecture-overview.md`.
 
-> Source/doc paths are relative to the Sirius repo root (`../sirius/`). Line numbers
+> Source/doc paths are relative to the Sirius repo root. Line numbers
 > accurate as of 2026-06-10; re-grep if the file moved.
 
 ## Where this sits
