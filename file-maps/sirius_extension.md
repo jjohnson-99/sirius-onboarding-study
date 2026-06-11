@@ -20,6 +20,19 @@ So most of the doc maps *out* of this file. This is the "doorway, not the engine
 file: both entry paths converge on `sirius_interface.cpp` (Step 3), which is your
 next file.
 
+> **Two different "legacy"s — don't conflate them.** The execution-flow doc labels
+> Step 1b (the explicit `gpu_execution` path) "Legacy," but that only means the
+> `CALL gpu_execution('...')` *invocation style* is no longer the default — it still
+> runs the **current Super Sirius engine**, and the `gpu_execution` table function is
+> registered **unconditionally** (line 1192, *outside* any `#ifdef`). The *truly*
+> legacy code — the old `gpu_processing` engine — is everything gated behind
+> `#ifdef SIRIUS_ENABLE_LEGACY` (e.g. `gpu_processing`, `gpu_buffer_init`), compiled
+> out by default. So: this file is fully live. We read the explicit path **first**
+> because it's the cleanest linear trace of "SQL → engine"; the **primary** doorway
+> (plain SQL, transparently intercepted) is
+> [`transparent/sirius_optimizer_extension.md`](transparent/sirius_optimizer_extension.md),
+> read right after this. Both converge on `sirius_interface`.
+
 ## Step 0 — Extension load (runs once at `LOAD`, before any query)
 
 | Function (signature) | Line | Role vs. doc |

@@ -25,18 +25,27 @@ A scan + aggregate — no join — so it exercises the spine without the hardest
 Eight stages, from SQL string to result. File:function references are the "point at
 it" the checkpoint asks for.
 
-### 1. Doorway — SQL enters Sirius
-**File map:** [`sirius_extension.md`](../file-maps/sirius_extension.md) · **doc:** Step 1 / 1b
+### 1. Doorways — SQL enters Sirius
+**File maps:** [`sirius_extension.md`](../file-maps/sirius_extension.md) (Step 0 + explicit), [`transparent/sirius_optimizer_extension.md`](../file-maps/transparent/sirius_optimizer_extension.md) (primary) · **doc:** Steps 1 / 1b / 2
 
-Two ways in, both ending at the same place:
-- **Transparent:** DuckDB's optimizer hooks (registered in `LoadInternal`) capture the
-  logical plan; `SiriusContext::OnFinalizePrepare` swaps DuckDB's physical plan for a
-  Sirius one.
-- **Explicit `CALL gpu_execution(...)`:** `GPUExecutionBind` (parse/optimize/plan) then
-  `GPUExecutionFunction` (run), which calls `sirius_interface::sirius_execute_query`.
+First, `LoadInternal` in `sirius_extension.cpp` bootstraps the extension (**Step 0**) —
+registering config, the optimizer hooks, and the `gpu_execution` function. Then there
+are **two doorways**, and the key fact is that **they converge** on one engine entry
+point, `sirius_interface::sirius_execute_query`:
 
-Either way, control reaches the interface. Unsupported queries silently **fall back**
-to DuckDB CPU.
+- **Explicit `CALL gpu_execution(...)`** (read first — cleanest linear trace):
+  `GPUExecutionBind` (parse/optimize/plan) → `GPUExecutionFunction` (run) →
+  `sirius_execute_query`.
+- **Transparent / plain SQL** (the production default): optimizer hooks capture the
+  optimized logical plan → `SiriusContext::OnFinalizePrepare` swaps DuckDB's physical
+  plan for a `PhysicalSiriusExecution` → its `GetDataInternal` calls
+  `sirius_execute_query`.
+
+So everything from Stage 3 onward is **shared by both paths** — the doorway is the
+only difference. ("Legacy" on Step 1b means the explicit *invocation* is non-default,
+not that the code is dead; the truly-legacy `gpu_processing` engine is a separate
+thing behind `#ifdef SIRIUS_ENABLE_LEGACY`.) Unsupported queries silently **fall
+back** to DuckDB CPU at the plan-generation step.
 
 ### 2. Translation — logical plan → Sirius physical plan
 **File map:** [`planner/sirius_physical_plan_generator.md`](../file-maps/planner/sirius_physical_plan_generator.md) · **doc:** Part 1 of physical-plan-generation

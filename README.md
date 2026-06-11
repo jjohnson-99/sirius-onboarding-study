@@ -21,6 +21,8 @@ sirius-onboarding-study/
     ├── sirius_interface.md        ↔ src/sirius_interface.cpp
     ├── sirius_engine.md           ↔ src/sirius_engine.cpp
     ├── sirius_context.md          ↔ src/sirius_context.{hpp,cpp}
+    ├── transparent/
+    │   └── sirius_optimizer_extension.md  ↔ src/transparent/{sirius_optimizer_extension,physical_sirius_execution}.cpp
     ├── planner/
     │   └── sirius_physical_plan_generator.md  ↔ src/planner/...plan_generator.cpp
     └── op/
@@ -45,7 +47,8 @@ as we work through [`onboarding-path.md`](onboarding-path.md); not all exist yet
 | [weeks/week2-concepts.md](weeks/week2-concepts.md) | Week 2 synthesis: the target query traced end-to-end through 8 stages, tying together every Week 2 file-map and mapped onto `execution-flow.md`. |
 | [reference/duckdb-types-glossary.md](reference/duckdb-types-glossary.md) | Shared reference for the recurring DuckDB types (`ClientContext`, `DataChunk`, `LogicalOperator`, …). Per-file maps link here instead of re-explaining. |
 | [file-maps/sirius_extension.md](file-maps/sirius_extension.md) | `src/sirius_extension.cpp` — the doorway: extension load (Step 0) + the explicit `gpu_execution` path (Step 1b). |
-| [file-maps/sirius_interface.md](file-maps/sirius_interface.md) | `src/sirius_interface.cpp` (Steps 3 & 9): query-lifecycle call graph, the `sirius_active_query` state machine, the DuckDB methods it forks. |
+| [file-maps/transparent/sirius_optimizer_extension.md](file-maps/transparent/sirius_optimizer_extension.md) | The **primary** doorway (Steps 1–2): plain-SQL interception via optimizer hooks + `PhysicalSiriusExecution`. Covers both `src/transparent/*.cpp`; converges with the explicit path on `sirius_interface`. |
+| [file-maps/sirius_interface.md](file-maps/sirius_interface.md) | `src/sirius_interface.cpp` (Steps 3 & 9): query-lifecycle call graph, the `sirius_active_query` state machine, the DuckDB methods it forks. **Where both doorways converge.** |
 | [file-maps/sirius_engine.md](file-maps/sirius_engine.md) | `src/sirius_engine.cpp` (Steps 4 & 5): build pipelines + launch into the scheduler; the orchestration core. *read closely* |
 | [file-maps/sirius_context.md](file-maps/sirius_context.md) | `src/sirius_context.hpp` (Day 3): the ownership hierarchy + transparent-execution interceptor; the `"sirius_state"` target. *read closely* |
 | [file-maps/planner/sirius_physical_plan_generator.md](file-maps/planner/sirius_physical_plan_generator.md) | `src/planner/sirius_physical_plan_generator.cpp`: logical→physical translation switch; Sirius's supported-feature boundary. |
