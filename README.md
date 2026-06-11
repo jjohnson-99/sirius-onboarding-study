@@ -21,6 +21,7 @@ sirius-onboarding-study/
 │       ├── vectorized-execution.md
 │       ├── push-vs-pull-execution.md
 │       ├── duckdb-table-functions.md
+│       ├── client-connections.md
 │       ├── morsel-driven-parallelism.md
 │       └── parquet-format.md
 └── file-maps/                    one map per source file, MIRRORING sirius/src/
@@ -53,7 +54,7 @@ as we work through [`onboarding-path.md`](onboarding-path.md); not all exist yet
 | [weeks/week1-concepts.md](weeks/week1-concepts.md) | Week 1 checkpoint explainer: physical plan, operator, pipeline, hash join, and how SQL becomes GPU work — cross-referenced to the Week 1 readings. |
 | [weeks/week2-concepts.md](weeks/week2-concepts.md) | Week 2 synthesis: the target query traced end-to-end through 8 stages, tying together every Week 2 file-map and mapped onto `execution-flow.md`. |
 | [reference/duckdb-types-glossary.md](reference/duckdb-types-glossary.md) | Shared reference for the recurring DuckDB types (`ClientContext`, `DataChunk`, `LogicalOperator`, …). Per-file maps link here instead of re-explaining. |
-| [reference/explainers/](reference/explainers/README.md) | Long-form background concepts intuitive to DB folks but not assumed of the reader — columnar vs. row storage, vectorized execution, push vs. pull, table functions, morsel-driven parallelism, Parquet. One topic per file, each tagged with the onboarding week to **prime around**. |
+| [reference/explainers/](reference/explainers/README.md) | Long-form background concepts intuitive to DB folks but not assumed of the reader — columnar vs. row storage, vectorized execution, push vs. pull, table functions, client connections & config scope, morsel-driven parallelism, Parquet. One topic per file, each tagged with the onboarding week to **prime around**. |
 | [file-maps/sirius_extension.md](file-maps/sirius_extension.md) | `src/sirius_extension.cpp` — the doorway: extension load (Step 0) + the explicit `gpu_execution` path (Step 1b). |
 | [file-maps/transparent/sirius_optimizer_extension.md](file-maps/transparent/sirius_optimizer_extension.md) | The **primary** doorway (Steps 1–2): plain-SQL interception via optimizer hooks + `PhysicalSiriusExecution`. Covers both `src/transparent/*.cpp`; converges with the explicit path on `sirius_interface`. |
 | [file-maps/sirius_interface.md](file-maps/sirius_interface.md) | `src/sirius_interface.cpp` (Steps 3 & 9): query-lifecycle call graph, the `sirius_active_query` state machine, the DuckDB methods it forks. **Where both doorways converge.** |

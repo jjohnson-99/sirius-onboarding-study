@@ -53,6 +53,12 @@ Both hooks early-out unless `gpu_execution_enabled` **and** the `SiriusContext` 
 initialized **and** it's not an internal query (`is_internal_query_active()` — the
 `InternalQueryGuard` guard you met in [`../sirius_context.md`](../sirius_context.md)).
 
+> The disable/restore is **per-query** and restored *unconditionally* right after
+> optimization (with a `QueryEnd` backstop) — **not** only on CPU fallback. Note also
+> that `disabled_optimizers` is database-wide `DBConfig` state, not per-connection.
+> Worked through in
+> [`../../reference/explainers/client-connections.md`](../../reference/explainers/client-connections.md).
+
 This is the explicit path's `PrepareConnection` optimizer-disabling, relocated into a
 DuckDB hook. Same idea, different trigger — exactly the symmetry noted in
 [`../sirius_extension.md`](../sirius_extension.md).
