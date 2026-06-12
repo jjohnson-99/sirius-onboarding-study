@@ -8,6 +8,72 @@ profiles, and the `src/cuda/` kernels.
 > **Prime around:** Week 1–2 (with `gpu-vs-cpu-for-databases`) for the model; again at
 > Week 5 / any time you read a `.cu` kernel or profile a query.
 
+## What a kernel is
+
+A **kernel** is a function that runs on the GPU — but it doesn't execute *once*. When you
+**launch** it, it runs **once per thread**, simultaneously, across thousands of threads.
+You write the body for **one** thread (using that thread's index to pick its data element),
+and the hardware stamps out thousands of copies. The trick: take a CPU loop and **turn it
+inside out**.
+
+```
+CPU (sequential):                 GPU (a kernel):
+  for (i = 0; i < N; i++)           __global__ void k(...) {
+      out[i] = qty[i] * 0.95;          int i = my_thread_index();   // the loop var
+                                        out[i] = qty[i] * 0.95;      // the loop *body*
+                                     }
+                                     launch k with N threads
+```
+
+The loop **body** becomes the kernel; the loop **variable** becomes the thread index; the
+**iteration** becomes the **parallelism**.
+
+### "One kernel over a column"
+
+A column is a contiguous array of N values (why columnar matters). To compute `qty * 0.95`
+over the whole column, you do **one launch** with ~N threads — thread `i` reads `qty[i]`,
+computes, writes `out[i]`. One kernel, the entire column in a single parallel pass. Those N
+threads are organized into the hierarchy below — warps of 32, grouped into blocks, all
+blocks forming the grid:
+
+```
+ONE KERNEL LAUNCH over column qty[0..N)        out[i] = qty[i] * 0.95
+
+ column:   qty0  qty1  qty2  qty3  qty4  ...                 qty(N-1)
+            │     │     │     │     │                          │
+ thread:    t0    t1    t2    t3    t4    ...                t(N-1)     one thread per element
+            └────────── warp 0 (t0..t31) ──────────┘
+            └──────────────── block 0 (e.g. 256 threads) ────────────────┘
+            grid = ⌈N / 256⌉ blocks  →  covers the whole column in one launch
+```
+
+(If N exceeds the threads launched, each thread handles a few elements in a strided
+"grid-stride" loop — still conceptually one launch over the column.)
+
+### Why saturate the GPU with large chunks
+
+The amount of data drives how busy the GPU is. An SM hides memory latency by keeping **many
+warps resident** and switching to a ready one when others stall (see *latency hiding*
+below) — and to *have* many warps you need many threads, i.e. **many elements**:
+
+```
+small column (1k rows) → ~32 warps total:
+   SM0 [▮▮· · · ·]  SM1 [· · · · · ·]  SM2 [· · · · · ·]  …   most SMs idle, latency
+   launch overhead paid for almost no work  →  GPU barely used      exposed
+
+large column (10M rows) → tens of thousands of warps:
+   SM0 [▮▮▮▮▮▮▮▮]  SM1 [▮▮▮▮▮▮▮▮]  SM2 [▮▮▮▮▮▮▮▮]  …   every SM packed with
+   stalls always hidden → full throughput                            ready warps
+```
+
+Three forces push the same way — **occupancy** (fill every SM), **latency hiding** (always
+a ready warp), and **launch-overhead amortization** (each launch costs microseconds, so do
+millions of elements per launch). This is exactly why Sirius processes whole `cudf::table`
+batches rather than the CPU's ~2048-row vectors
+([`vectorized-execution.md`](vectorized-execution.md)): a big batch is one launch with
+enough threads to saturate the device; a tiny batch leaves it mostly idle while you still
+pay the launch cost.
+
 ## The execution hierarchy (terminology)
 
 A kernel launch fans out into a hierarchy:
@@ -124,6 +190,8 @@ metrics in these terms.
 
 | Term | One-liner |
 |---|---|
+| **Kernel** | a GPU function launched once *per thread* across the grid — the loop body, parallelized |
+| **Launch** | starting a kernel with a grid/block config; ~µs overhead, so each should do lots of work |
 | **Thread** | one kernel instance over one element; owns registers + index |
 | **Warp** | 32 threads issued in lockstep; the scheduling unit |
 | **Block / CTA** | warps on one SM that share memory + can synchronize |
