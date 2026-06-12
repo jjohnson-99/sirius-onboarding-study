@@ -42,10 +42,15 @@ than as part of the arc. *GPU systems* (how kernels run, are scheduled, and are 
 **[GPU warps & execution model](gpu-warps-and-execution.md)** and
 **[CUDA streams & async](cuda-streams-and-async.md)** (deeper dives on step 2's hardware),
 plus **[GPU memory & spilling](gpu-memory-and-spilling.md)** (how Sirius copes with limited
-GPU memory — reservations + tiered spill; Week 6 infrastructure). *DB context:*
+GPU memory — reservations + tiered spill; Week 6 infrastructure), and **[cuDF](cudf.md)**
+(the GPU primitive library the operators actually call), and **[cuCascade](cucascade.md)**
+(the tiered-memory & data-flow library behind the batches/repositories), on
+**[RMM](rmm.md)** (the GPU allocation layer beneath both). *DB context:*
+**[DuckDB extension API](duckdb-extension-api.md)** (how Sirius plugs into DuckDB),
 **[table functions](duckdb-table-functions.md)** (how queries and data enter),
-**[Parquet](parquet-format.md)** (columnar *on disk*),
-**[client connections](client-connections.md)** (sessions & config scope), and
+**[Parquet](parquet-format.md)** (columnar *on disk*) + **[Iceberg](iceberg-table-format.md)**
+(table format over it), **[client connections](client-connections.md)** (sessions & config
+scope), and
 **[MVCC](mvcc-concurrency-control.md)** (concurrency control — Sirius defers to DuckDB;
 optional).
 
@@ -65,7 +70,11 @@ grounded — the week is a *suggestion*, not a gate.
 | [gpu-warps-and-execution.md](gpu-warps-and-execution.md) | Week 1–2 → 5 | The GPU execution model in depth: the thread/warp/block/grid/SM hierarchy, SIMT, latency hiding by warp-switching, occupancy, divergence, the memory hierarchy & bank conflicts, warp-level primitives — plus a terminology glossary. Deep-dive companion to the previous one. |
 | [cuda-streams-and-async.md](cuda-streams-and-async.md) | Week 2 → 5–6 | The async model: streams as ordered queues, host/GPU concurrency, events & synchronization, copy/compute overlap (hiding PCIe), pinned memory, stream-ordered allocation (RMM) — and why every `execute()` takes a `cuda_stream_view`. |
 | [gpu-memory-and-spilling.md](gpu-memory-and-spilling.md) | Week 6 | Why GPU memory is the hard constraint; RMM pooling; the GPU→host→disk tiers (cuCascade); reservations as admission control; the downgrade executor (spilling); read-only locks; OOM retry & CPU fallback; NUMA/multi-GPU spaces. |
+| [cudf.md](cudf.md) | Week 2 | What cuDF/libcudf is (RAPIDS GPU DataFrame library), `cudf::column`/`table`, the relational primitives it provides, and how Sirius operators are mostly thin translators from DuckDB plan nodes to `cudf::` calls. |
+| [cucascade.md](cucascade.md) | Week 5 → 6 | The tiered-memory & data-flow library: `memory_space`/`Tier`, data representations, the `data_batch` (+ read-only locks), tier converters (spill/promote), and `shared_data_repository` — the residency counterpart to cuDF's compute. |
+| [rmm.md](rmm.md) | Week 2 → 6 | RMM (RAPIDS Memory Manager): the GPU allocation floor — memory resources, the pool MR, stream-ordered allocation, device buffers, and the `rmm::cuda_stream_view` in every `execute()`. Beneath cuDF & cuCascade. |
 | [push-vs-pull-execution.md](push-vs-pull-execution.md) | Week 1–2 → 4 | Who drives data through the operator tree — demand-driven pull (Volcano) vs. data-driven push — the trade-offs, and why Sirius's ports/barriers/task-creator are exactly what a push-between-pipelines model needs. |
+| [duckdb-extension-api.md](duckdb-extension-api.md) | Week 2 | How Sirius plugs into DuckDB (it's an extension, not a fork): the load entry point and the extension points — table functions, SET options, the `OptimizerExtension` + `ClientContextState` rebind that powers transparent execution, `ExtensionCallback`, replacement scans. |
 | [duckdb-table-functions.md](duckdb-table-functions.md) | Week 2 | What a DuckDB *table function* is, why it's called "table," and what the bind/execute two-callback contract means — with `range(5)` and the `gpu_execution`/`read_parquet` pairs. |
 | [client-connections.md](client-connections.md) | Week 2 | The database → connection → query hierarchy, what's per-database (`DBConfig`) vs per-connection (`ClientConfig`), Sirius's shared/serialized runtime, and the per-query optimizer disable/restore lifecycle as a worked example. |
 | [aggregation-and-group-by.md](aggregation-and-group-by.md) | Week 2 | Ungrouped vs grouped aggregates, hash vs sort grouping, the accumulator model, partial/combinable aggregation (local→merge), the distributive/algebraic/holistic classes (why AVG decomposes), and Sirius's two-phase cuDF implementation. |
@@ -74,4 +83,5 @@ grounded — the week is a *suggestion*, not a gate.
 | [morsel-driven-parallelism.md](morsel-driven-parallelism.md) | Week 4 | How analytical engines spread work across cores/GPUs — morsels + work-stealing vs. plan-time exchange operators — and how it maps onto Sirius's task scheduler/creator. |
 | [hash-join-build-probe.md](hash-join-build-probe.md) | Week 1 → 5 | Why hash join beats nested loops, the build (small side → hash table) / probe (stream big side) split, join types, partitioning when it won't fit, the build-side pipeline breaker, and Sirius's cuDF join modes. |
 | [parquet-format.md](parquet-format.md) | Week 5 | The Parquet file layout (row groups → column chunks → pages → footer), why the footer enables cheap schema + column pruning + row-group skipping, and how Sirius decodes it on the GPU. |
+| [iceberg-table-format.md](iceberg-table-format.md) | Week 5 | Apache Iceberg: a metadata/table layer over Parquet files (snapshots, time travel, schema/partition evolution, row-level deletes via delete files/deletion vectors) and how Sirius's `ICEBERG_SCAN` applies the deletes on the GPU. |
 | [mvcc-concurrency-control.md](mvcc-concurrency-control.md) | Optional | Concurrency control & MVCC — snapshot isolation, readers-don't-block-writers, why DuckDB uses it, and why Sirius *doesn't* (it inherits DuckDB's MVCC; its own "concurrency" is GPU scheduling). Background the plan defers. |

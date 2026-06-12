@@ -123,6 +123,8 @@ close to the right GPU. Cross-GPU movement uses P2P + the stream-lineage orderin
 
 ## See also
 
+- [`cucascade.md`](cucascade.md) — the library that implements these tiers, `data_batch`es,
+  and repositories (this explainer is the *concepts*; that's the *types/API*).
 - [`cuda-streams-and-async.md`](cuda-streams-and-async.md) — stream-ordered allocation and
   the async copies spilling uses.
 - [`gpu-vs-cpu-for-databases.md`](gpu-vs-cpu-for-databases.md) — GPU memory as the scarce
