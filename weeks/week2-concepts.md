@@ -106,6 +106,9 @@ The final RESULT_COLLECTOR pipeline completes; the future resolves;
 `fetch_result_internal` → `cleanup_internal` tears down `sirius_active_query`; DuckDB
 hands the rows to the client.
 
+> For the **code-level** version of this trace — the four orchestration maps' call-sequence
+> trees stitched into one spine — see [`file-maps/README.md`](file-maps/README.md).
+
 ## The one-screen mental model
 
 ```

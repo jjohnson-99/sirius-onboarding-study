@@ -52,27 +52,28 @@ Who calls whom, in order (line numbers are definitions; `─▶` leaves this fil
 sirius_execute_query()                                  :214   ◀─ entry (from both doorways)
 │   try { … } catch(…) → cleanup_internal + error result
 │
-├─ sirius_pending_statement_or_prepared_statement()     :131   ══ PENDING PHASE (build, don't run)
+├─ sirius_pending_statement_or_prepared_statement()     :131   ══ PENDING PHASE (build, don't run) · Step 3
 │  ├─ begin_query_internal()                            :83      opens sirius_active_query
 │  └─ sirius_pending_statement_internal()               :150
 │     ├─ bind_prepared_statement_parameters()           :35      (stub — no params yet)
 │     ├─ new sirius_engine(…)                           :160
 │     ├─ new sirius_physical_materialized_collector     :166     the RESULT_COLLECTOR sink
-│     ├─ engine.initialize(collector)                   :177   ─▶ sirius_engine  (build pipelines)
+│     ├─ engine.initialize(collector)                   :177   ─▶ sirius_engine · Step 4 (build pipelines)
 │     └─ new PendingQueryResult                         :181
 │        └─ (if pending.HasError → cleanup + error result)
 │
 └─ sirius_execute_pending_query_result()                :189   ══ EXECUTE PHASE (run + fetch)
    ├─ check_executable_internal()                       :65
-   ├─ engine.execute()                                  :197   ─▶ sirius_engine  (run pipelines; BLOCKS)
+   ├─ engine.execute()                                  :197   ─▶ sirius_engine · Step 5 (run pipelines; BLOCKS)
    └─ fetch_result_internal()                           :91
-      ├─ engine.get_result()                            :102   ─▶ sirius_engine  (materialized result)
+      ├─ engine.get_result()                            :102   ─▶ sirius_engine · Step 9 (materialized result)
       └─ cleanup_internal()                             :107
          └─ end_query_internal()                        :121     closes sirius_active_query
 ```
 
 The two `══` phases are DuckDB's pending/execute split; the three `─▶ sirius_engine`
-arrows are the only places control leaves this file. `sirius_active_query` is opened at
+arrows are the only places control leaves this file (`· Step N` = the `execution-flow.md`
+step a node begins or triggers — per-function steps are in the Call-graph table below). `sirius_active_query` is opened at
 `:83` and closed at `:121`, bracketing the whole query (one-at-a-time). `cleanup_internal`
 runs on *every* exit (success, early-error, and the catch). Errors are wrapped into a
 result via `sirius_error_result<T>()` `:57` → `sirius_process_error()` `:46` rather than

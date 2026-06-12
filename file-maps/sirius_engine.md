@@ -37,14 +37,14 @@ initialize(plan)                              :140   ◀─ Step 4 entry
 ├─ prefetch_iceberg_delete_data(plan)         :289     (iceberg-only; skip on first read)
 └─ initialize_internal(plan)                  :353   ══ BUILD PIPELINES
    ├─ root_pipeline->build(plan) / ready()    :375   ─▶ operators' build_pipelines()  (meta-pipeline)
-   ├─ converter.convert(root_pipeline)        :383   ─▶ sirius_pipeline_converter  (split + wire)  [Wk 4–5]
+   ├─ converter.convert(root_pipeline)        :383   ─▶ sirius_pipeline_converter  (split + wire)
    │     ⋯ calls construct_sirius_specific_operator()  :204  → injects MERGE / second-phase ops
    ├─ materialize_repository_wiring(…)         :386     plan-time wiring → live repositories
    └─ new_scheduled = …                        :389     ◀ the runnable pipelines
 
 execute()                                     :154   ══ LAUNCH + WAIT  (Step 5)
 ├─ ctx->create_query(new_scheduled, …)        :165   ─▶ SiriusContext  (registers the query)
-├─ task_scheduler.start_query()               :170   ─▶ task_scheduler → future        [Wk 4]
+├─ task_scheduler.start_query()               :170   ─▶ task_scheduler → future
 └─ future.get()                               :172     BLOCKS until the query completes
       ⋯ on exception → drain_after_error()     :180     drains in-flight GPU tasks first
 

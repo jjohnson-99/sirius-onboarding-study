@@ -38,6 +38,37 @@ They run in that order, hooked into DuckDB's normal query lifecycle. The hooks a
 *registered* back in `LoadInternal` (`sirius_extension.cpp`, lines 1645–1648) — which
 is why Step 0 (extension load) is a prerequisite for this path.
 
+## Call sequence
+
+This map covers **two** source files (and one method in a third); each block below is
+labeled with its file. `─▶` leaves these files; `· Step N` = `execution-flow.md` step:
+
+```
+sirius_optimizer_extension.cpp — install (during DuckDB's optimize → prepare):
+  sirius_pre_optimizer_hook()        :40   disable incompatible optimizers              · Step 1
+  sirius_optimizer_hook()            :74   ─▶ SiriusContext.set_captured_logical_plan
+     └ then SiriusContext::OnFinalizePrepare()  (sirius_context.cpp)
+                                           ─▶ create_plan → installs PhysicalSiriusExecution
+
+physical_sirius_execution.cpp — run (DuckDB drives PhysicalSiriusExecution as a source op):
+GetGlobalSourceState()                :68   creates the sirius_interface (once)          · Step 2
+GetDataInternal()                     :86 ◀─ called repeatedly by DuckDB
+├─ first call only ──▶ lazy build & run:
+│  ├─ logical_plan_->Copy()  (or re-parse+optimize :132)  :119   rebuild a fresh plan
+│  ├─ planner.create_plan(fresh_plan) :143  ─▶ plan generator
+│  ├─ wrap → sirius_prepared_statement_data :146
+│  └─ iface->sirius_execute_query(…)  :151  ─▶ sirius_interface               · Step 3 → 9
+└─ state.result->Fetch()              :164   pull the next chunk → HAVE_MORE / FINISHED
+```
+
+The first block (`sirius_optimizer_extension.cpp`) is DuckDB's optimize/prepare phase
+capturing the plan and swapping in the operator (via `OnFinalizePrepare` in
+`sirius_context.cpp`); the second (`physical_sirius_execution.cpp`) is that operator being
+pulled for data. The `iface->sirius_execute_query` handoff at `:151` is **the convergence
+point** — the explicit `gpu_execution` path reaches the *same* call (see
+[`file-maps/sirius_interface.md`](file-maps/sirius_interface.md) → Call sequence), so from
+Step 3 on the two doorways are identical.
+
 ## Piece 1 — the optimizer hooks (Step 1)
 
 DuckDB's `OptimizerExtension` lets you run code around its optimizer. Sirius

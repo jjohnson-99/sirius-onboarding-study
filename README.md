@@ -40,6 +40,7 @@ sirius-onboarding-study/
 │       ├── iceberg-table-format.md
 │       └── mvcc-concurrency-control.md
 └── file-maps/                    one map per source file, MIRRORING sirius/src/
+    ├── README.md                  index + the orchestration-spine call walk
     ├── sirius_extension.md        ↔ src/sirius_extension.cpp
     ├── sirius_interface.md        ↔ src/sirius_interface.cpp
     ├── sirius_engine.md           ↔ src/sirius_engine.cpp
@@ -71,6 +72,7 @@ as we work through [`onboarding-path.md`](onboarding-path.md); not all exist yet
 | [reference/duckdb-types-glossary.md](reference/duckdb-types-glossary.md) | Shared reference for the recurring DuckDB types (`ClientContext`, `DataChunk`, `LogicalOperator`, …). Per-file maps link here instead of re-explaining. |
 | [reference/duckdb-source-map.md](reference/duckdb-source-map.md) | Pointers into **DuckDB's own source** (not in this repo) for the internals our notes reference — query lifecycle, extension API, logical plans, core types, optimizer. Read at Sirius's pinned commit. |
 | [reference/explainers/](reference/explainers/README.md) | Long-form background concepts intuitive to DB folks but not assumed of the reader — OLTP vs. OLAP, columnar vs. row storage, vectorized execution, GPU vs. CPU (+ warps/execution model, CUDA streams/async, memory & spilling), cuDF, cuCascade, RMM, filters & expression evaluation, push vs. pull, DuckDB extension API, table functions, client connections & config scope, aggregation & GROUP BY, morsel-driven parallelism, hash join build/probe, sorting & ORDER BY, Parquet, Iceberg, MVCC. One topic per file, each tagged with the onboarding week to **prime around** — and arranged into a "why GPU-native SQL" reading thread (see its README). |
+| [file-maps/](file-maps/README.md) | **Index of the per-file maps + the orchestration-spine call walk** stitching the four doorway/lifecycle/engine maps into one end-to-end control-flow trace. |
 | [file-maps/sirius_extension.md](file-maps/sirius_extension.md) | `src/sirius_extension.cpp` — the doorway: extension load (Step 0) + the explicit `gpu_execution` path (Step 1b). |
 | [file-maps/transparent/sirius_optimizer_extension.md](file-maps/transparent/sirius_optimizer_extension.md) | The **primary** doorway (Steps 1–2): plain-SQL interception via optimizer hooks + `PhysicalSiriusExecution`. Covers both `src/transparent/*.cpp`; converges with the explicit path on `sirius_interface`. |
 | [file-maps/sirius_interface.md](file-maps/sirius_interface.md) | `src/sirius_interface.cpp` (Steps 3 & 9): query-lifecycle call graph, the `sirius_active_query` state machine, the DuckDB methods it forks. **Where both doorways converge.** |

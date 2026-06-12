@@ -33,6 +33,41 @@ next file.
 > [`transparent/sirius_optimizer_extension.md`](file-maps/transparent/sirius_optimizer_extension.md),
 > read right after this. Both converge on `sirius_interface`.
 
+## Call sequence
+
+Two unrelated flows live here — a one-time `load` and the per-call `gpu_execution` path.
+`─▶` leaves this file; `· Step N` = `execution-flow.md` step:
+
+```
+load — Step 0 (once, at LOAD):
+DUCKDB_CPP_EXTENSION_ENTRY(sirius, loader)     :1674
+└─ LoadInternal(loader)                        :1623   the bootstrap — registers everything:
+   ├─ GetCallbackManager().Register(…)         :1631   SiriusContextExtensionCallback (per-conn state)
+   ├─ InitialGPUConfigs(config)                :1452   SET options (AddExtensionOption ×N)
+   ├─ RegisterGPUFunctions(db)                 :1175   table functions (gpu_execution, pin_table, …)
+   └─ OptimizerExtension::Register(…)          :1645   wire transparent hooks   · enables Step 1
+                                                       (hook bodies in transparent/ — see that map)
+
+explicit gpu_execution — Step 1b (per CALL gpu_execution('…')):
+GPUExecutionBind()                             :510  ◀─ DuckDB binds the table function (once)
+├─ ExtractPlan()                               :241   parse → optimize → resolve
+│     └─ PrepareConnection()                   :203   disable incompatible optimizers (explicit-path analogue)
+├─ SiriusGeneratePhysicalPlan()                :498   ─▶ plan generator (create_plan)
+└─ build sirius_interface + wrap plan          :533/570   → SiriusTableFunctionData (bind state)
+GPUExecutionFunction()                         :595  ◀─ DuckDB pulls rows (repeatedly)
+├─ if plan_error ─▶ run_internal_cpu_fallback_query   :100   ─▶ DuckDB CPU
+├─ iface->sirius_execute_query(…)              :612   ─▶ sirius_interface          · Step 3 → 9
+│     └─ on error ─▶ run_internal_cpu_fallback_query  :100   ─▶ DuckDB CPU
+└─ data.res->Fetch()                           :632   pull the next chunk
+```
+
+The `load` block is a one-time **fan-out** — it *registers* everything, including the
+transparent hooks, so `LoadInternal` enables *both* doorways (not a control-flow chain;
+shown for orientation). The `explicit gpu_execution` block is the only real chain here, and
+its `sirius_execute_query` at `:612` is the **same convergence point** as the transparent
+path ([`file-maps/transparent/sirius_optimizer_extension.md`](file-maps/transparent/sirius_optimizer_extension.md)
+→ Call sequence). Any plan/execution error falls back to DuckDB CPU.
+
 ## Step 0 — Extension load (runs once at `LOAD`, before any query)
 
 | Function (signature) | Line | Role vs. doc |
