@@ -19,7 +19,9 @@ every function carries a comment like *"based on `ClientContext::Query`"* or
 through `ClientContext` → pending statement → execute → fetch; Sirius copied that
 skeleton into `sirius_interface` and **swapped DuckDB's CPU executor for the Sirius
 GPU engine**. So if you know (or skim) how DuckDB's `ClientContext::Query` works, you
-already know the shape of this file — the only real change is *who executes*.
+already know the shape of this file — the only real change is *who executes*. (To read
+the real DuckDB methods these are forked from, see
+[`reference/duckdb-source-map.md`](reference/duckdb-source-map.md) → Query lifecycle.)
 
 It implements **Step 3 (Query Lifecycle Setup)** and **Step 9 (Result Extraction)**
 of the execution-flow doc. It is the layer between the entry doorways
@@ -41,6 +43,40 @@ That separation is why one logical "run the query" spreads across
 `…_pending_statement_internal`, then `…_execute_pending_query_result` →
 `fetch_result_internal`. It looks like a lot of indirection; it's really just DuckDB's
 two-phase contract reproduced.
+
+## Call sequence
+
+Who calls whom, in order (line numbers are definitions; `─▶` leaves this file):
+
+```
+sirius_execute_query()                                  :214   ◀─ entry (from both doorways)
+│   try { … } catch(…) → cleanup_internal + error result
+│
+├─ sirius_pending_statement_or_prepared_statement()     :131   ══ PENDING PHASE (build, don't run)
+│  ├─ begin_query_internal()                            :83      opens sirius_active_query
+│  └─ sirius_pending_statement_internal()               :150
+│     ├─ bind_prepared_statement_parameters()           :35      (stub — no params yet)
+│     ├─ new sirius_engine(…)                           :160
+│     ├─ new sirius_physical_materialized_collector     :166     the RESULT_COLLECTOR sink
+│     ├─ engine.initialize(collector)                   :177   ─▶ sirius_engine  (build pipelines)
+│     └─ new PendingQueryResult                         :181
+│        └─ (if pending.HasError → cleanup + error result)
+│
+└─ sirius_execute_pending_query_result()                :189   ══ EXECUTE PHASE (run + fetch)
+   ├─ check_executable_internal()                       :65
+   ├─ engine.execute()                                  :197   ─▶ sirius_engine  (run pipelines; BLOCKS)
+   └─ fetch_result_internal()                           :91
+      ├─ engine.get_result()                            :102   ─▶ sirius_engine  (materialized result)
+      └─ cleanup_internal()                             :107
+         └─ end_query_internal()                        :121     closes sirius_active_query
+```
+
+The two `══` phases are DuckDB's pending/execute split; the three `─▶ sirius_engine`
+arrows are the only places control leaves this file. `sirius_active_query` is opened at
+`:83` and closed at `:121`, bracketing the whole query (one-at-a-time). `cleanup_internal`
+runs on *every* exit (success, early-error, and the catch). Errors are wrapped into a
+result via `sirius_error_result<T>()` `:57` → `sirius_process_error()` `:46` rather than
+thrown; `get_sirius_engine()` `:243` is the accessor behind every `engine.…`.
 
 ## Call graph (top to bottom)
 

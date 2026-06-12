@@ -26,6 +26,38 @@ The heavy lifting of *how* pipelines are split is delegated to
 `sirius_pipeline_converter` (Week 4–5 reading); the engine is the ~35-line
 orchestrator around it.
 
+## Call sequence
+
+The three verbs are called by `sirius_interface` (see
+[`sirius_interface.md`](sirius_interface.md)); `─▶` leaves this file:
+
+```
+initialize(plan)                              :140   ◀─ Step 4 entry
+├─ reset()                                    :106
+├─ prefetch_iceberg_delete_data(plan)         :289     (iceberg-only; skip on first read)
+└─ initialize_internal(plan)                  :353   ══ BUILD PIPELINES
+   ├─ root_pipeline->build(plan) / ready()    :375   ─▶ operators' build_pipelines()  (meta-pipeline)
+   ├─ converter.convert(root_pipeline)        :383   ─▶ sirius_pipeline_converter  (split + wire)  [Wk 4–5]
+   │     ⋯ calls construct_sirius_specific_operator()  :204  → injects MERGE / second-phase ops
+   ├─ materialize_repository_wiring(…)         :386     plan-time wiring → live repositories
+   └─ new_scheduled = …                        :389     ◀ the runnable pipelines
+
+execute()                                     :154   ══ LAUNCH + WAIT  (Step 5)
+├─ ctx->create_query(new_scheduled, …)        :165   ─▶ SiriusContext  (registers the query)
+├─ task_scheduler.start_query()               :170   ─▶ task_scheduler → future        [Wk 4]
+└─ future.get()                               :172     BLOCKS until the query completes
+      ⋯ on exception → drain_after_error()     :180     drains in-flight GPU tasks first
+
+get_result()                                  :129   ◀─ Step 9 (called by interface's fetch)
+└─ result_collector.get_result()              :136     materialized result out
+```
+
+`initialize` (build) and `execute` (launch) mirror `sirius_interface`'s pending/execute
+split. The `─▶` arrows are the engine's handoffs — to the **converter** (the real pipeline
+machinery, Week 4–5), the **`task_scheduler`** (Week 4), and **`SiriusContext`**; the engine
+itself just orchestrates. `construct_sirius_specific_operator` is reached *from inside* the
+converter, where the local→merge operator pairs are born.
+
 ## The three verbs (call them in this order)
 
 | Function (signature) | Line | Doc step / role |
