@@ -13,7 +13,10 @@ onboarding week).
 ## The "why GPU-native SQL" thread
 
 These aren't a loose bag of topics — read in this order, they argue *why Sirius is shaped
-the way it is*. Each step sets up the next:
+the way it is*. Each step sets up the next.
+
+**The premise:** Sirius is an **[OLAP](oltp-vs-olap.md)** engine — analytics, not
+transactions; every step below follows from that one fact.
 
 1. **[Columnar vs. row storage](columnar-vs-row-storage.md)** — store data by column, not
    by row.
@@ -30,8 +33,9 @@ the way it is*. Each step sets up the next:
 6. **[Morsel-driven parallelism](morsel-driven-parallelism.md)** — how those pipelines
    parallelize across cores and GPUs.
 7. **[Hash join build/probe](hash-join-build-probe.md)** + **[Aggregation & GROUP BY](aggregation-and-group-by.md)**
-   — the two heavyweight operators, built on the hashing/partitioning and combinable
-   local→merge ideas from the steps above.
+   + **[Sorting & ORDER BY](sorting-and-order-by.md)** — the three heavyweight blocking
+   operators, built on the partitioning and combinable local→merge ideas above
+   (hash-partition for join/group-by; **range**-partition for sort).
 
 **Supporting concepts** sit beside the thread, pulled in where a map needs them rather
 than as part of the arc: **[table functions](duckdb-table-functions.md)** (how queries and
@@ -49,6 +53,7 @@ grounded — the week is a *suggestion*, not a gate.
 
 | File | Prime around | Answers |
 |------|------|---------|
+| [oltp-vs-olap.md](oltp-vs-olap.md) | Week 1 | The premise: OLTP (many small txns, row store) vs OLAP (big read-mostly scans, column store), the contrast table, and why "Sirius is OLAP" is the root cause of columnar + vectorized + GPU. |
 | [columnar-vs-row-storage.md](columnar-vs-row-storage.md) | Week 1 | Row-major vs column-major layout, why analytics engines (and GPUs) want columnar, why OLTP still uses rows, and why DuckDB/cuDF/Sirius are columnar to the core. |
 | [vectorized-execution.md](vectorized-execution.md) | Week 1 | The processing model: Volcano vs. operator-at-a-time vs. vectorized (batch) execution, why ~2048, why it needs columnar, and how Sirius makes the "vector" a whole GPU column. |
 | [gpu-vs-cpu-for-databases.md](gpu-vs-cpu-for-databases.md) | Week 1–2 | Why a GPU isn't just "more cores": throughput vs latency, SIMT warps, memory **coalescing** (why row-major kills GPU bandwidth), the PCIe boundary, and why bandwidth-bound DB ops win on GPUs — *if* the data is columnar. |
@@ -57,6 +62,7 @@ grounded — the week is a *suggestion*, not a gate.
 | [client-connections.md](client-connections.md) | Week 2 | The database → connection → query hierarchy, what's per-database (`DBConfig`) vs per-connection (`ClientConfig`), Sirius's shared/serialized runtime, and the per-query optimizer disable/restore lifecycle as a worked example. |
 | [aggregation-and-group-by.md](aggregation-and-group-by.md) | Week 2 | Ungrouped vs grouped aggregates, hash vs sort grouping, the accumulator model, partial/combinable aggregation (local→merge), the distributive/algebraic/holistic classes (why AVG decomposes), and Sirius's two-phase cuDF implementation. |
 | [filters-and-expression-evaluation.md](filters-and-expression-evaluation.md) | Week 3 | Expressions as ASTs; projection vs filter (predicate → mask → stream compaction); the materialize / AST-interpret / JIT-fuse strategies and why fusing matters on a bandwidth-bound GPU; filter pushdown; Sirius's `gpu_expression_executor` strategy knob. |
+| [sorting-and-order-by.md](sorting-and-order-by.md) | Week 3 → 5 | Why sorting blocks; parallel sample sort (local sort → sample boundaries → **range**-partition → merge) vs the hash-partition of join/agg; TOP-N as partial sort; GPU radix sort; Sirius's 4-phase `ORDER_BY`/`SORT_SAMPLE`/`SORT_PARTITION`/`MERGE_SORT`. |
 | [morsel-driven-parallelism.md](morsel-driven-parallelism.md) | Week 4 | How analytical engines spread work across cores/GPUs — morsels + work-stealing vs. plan-time exchange operators — and how it maps onto Sirius's task scheduler/creator. |
 | [hash-join-build-probe.md](hash-join-build-probe.md) | Week 1 → 5 | Why hash join beats nested loops, the build (small side → hash table) / probe (stream big side) split, join types, partitioning when it won't fit, the build-side pipeline breaker, and Sirius's cuDF join modes. |
 | [parquet-format.md](parquet-format.md) | Week 5 | The Parquet file layout (row groups → column chunks → pages → footer), why the footer enables cheap schema + column pruning + row-group skipping, and how Sirius decodes it on the GPU. |
