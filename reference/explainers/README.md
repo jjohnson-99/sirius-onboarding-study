@@ -38,8 +38,13 @@ transactions; every step below follows from that one fact.
    (hash-partition for join/group-by; **range**-partition for sort).
 
 **Supporting concepts** sit beside the thread, pulled in where a map needs them rather
-than as part of the arc: **[table functions](duckdb-table-functions.md)** (how queries and
-data enter), **[Parquet](parquet-format.md)** (columnar *on disk*),
+than as part of the arc. *GPU systems* (how kernels run, are scheduled, and are fed):
+**[GPU warps & execution model](gpu-warps-and-execution.md)** and
+**[CUDA streams & async](cuda-streams-and-async.md)** (deeper dives on step 2's hardware),
+plus **[GPU memory & spilling](gpu-memory-and-spilling.md)** (how Sirius copes with limited
+GPU memory — reservations + tiered spill; Week 6 infrastructure). *DB context:*
+**[table functions](duckdb-table-functions.md)** (how queries and data enter),
+**[Parquet](parquet-format.md)** (columnar *on disk*),
 **[client connections](client-connections.md)** (sessions & config scope), and
 **[MVCC](mvcc-concurrency-control.md)** (concurrency control — Sirius defers to DuckDB;
 optional).
@@ -57,6 +62,9 @@ grounded — the week is a *suggestion*, not a gate.
 | [columnar-vs-row-storage.md](columnar-vs-row-storage.md) | Week 1 | Row-major vs column-major layout, why analytics engines (and GPUs) want columnar, why OLTP still uses rows, and why DuckDB/cuDF/Sirius are columnar to the core. |
 | [vectorized-execution.md](vectorized-execution.md) | Week 1 | The processing model: Volcano vs. operator-at-a-time vs. vectorized (batch) execution, why ~2048, why it needs columnar, and how Sirius makes the "vector" a whole GPU column. |
 | [gpu-vs-cpu-for-databases.md](gpu-vs-cpu-for-databases.md) | Week 1–2 | Why a GPU isn't just "more cores": throughput vs latency, SIMT warps, memory **coalescing** (why row-major kills GPU bandwidth), the PCIe boundary, and why bandwidth-bound DB ops win on GPUs — *if* the data is columnar. |
+| [gpu-warps-and-execution.md](gpu-warps-and-execution.md) | Week 1–2 → 5 | The GPU execution model in depth: the thread/warp/block/grid/SM hierarchy, SIMT, latency hiding by warp-switching, occupancy, divergence, the memory hierarchy & bank conflicts, warp-level primitives — plus a terminology glossary. Deep-dive companion to the previous one. |
+| [cuda-streams-and-async.md](cuda-streams-and-async.md) | Week 2 → 5–6 | The async model: streams as ordered queues, host/GPU concurrency, events & synchronization, copy/compute overlap (hiding PCIe), pinned memory, stream-ordered allocation (RMM) — and why every `execute()` takes a `cuda_stream_view`. |
+| [gpu-memory-and-spilling.md](gpu-memory-and-spilling.md) | Week 6 | Why GPU memory is the hard constraint; RMM pooling; the GPU→host→disk tiers (cuCascade); reservations as admission control; the downgrade executor (spilling); read-only locks; OOM retry & CPU fallback; NUMA/multi-GPU spaces. |
 | [push-vs-pull-execution.md](push-vs-pull-execution.md) | Week 1–2 → 4 | Who drives data through the operator tree — demand-driven pull (Volcano) vs. data-driven push — the trade-offs, and why Sirius's ports/barriers/task-creator are exactly what a push-between-pipelines model needs. |
 | [duckdb-table-functions.md](duckdb-table-functions.md) | Week 2 | What a DuckDB *table function* is, why it's called "table," and what the bind/execute two-callback contract means — with `range(5)` and the `gpu_execution`/`read_parquet` pairs. |
 | [client-connections.md](client-connections.md) | Week 2 | The database → connection → query hierarchy, what's per-database (`DBConfig`) vs per-connection (`ClientConfig`), Sirius's shared/serialized runtime, and the per-query optimizer disable/restore lifecycle as a worked example. |

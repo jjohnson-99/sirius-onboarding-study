@@ -110,6 +110,8 @@ Two more GPU-specific costs the design must respect:
 
 ## See also
 
+- [`gpu-warps-and-execution.md`](gpu-warps-and-execution.md) — the deep dive on *how* the
+  GPU executes: warps, occupancy, divergence, the memory hierarchy, terminology.
 - [`columnar-vs-row-storage.md`](columnar-vs-row-storage.md) — the layout this hardware
   demands.
 - [`vectorized-execution.md`](vectorized-execution.md) — SIMT as the extreme of
