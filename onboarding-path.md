@@ -67,18 +67,18 @@ Target query: `SELECT l_returnflag, SUM(l_quantity) FROM lineitem GROUP BY l_ret
       the engine, then the shared engine. Read the explicit doorway first (cleanest
       linear trace), then the transparent one (the production default); both converge
       on `sirius_interface`:
-  - [ ] `src/sirius_extension.cpp` — *skim*; Step 0 (extension load) + the explicit
+  - [x] `src/sirius_extension.cpp` — *skim*; Step 0 (extension load) + the explicit
         `gpu_execution` doorway (Step 1b). Large (~1,700 lines) but mostly
         registration/config boilerplate
-  - [ ] `src/transparent/sirius_optimizer_extension.cpp` + `src/transparent/physical_sirius_execution.cpp`
+  - [x] `src/transparent/sirius_optimizer_extension.cpp` + `src/transparent/physical_sirius_execution.cpp`
         — *read*; the **primary** doorway: plain SQL intercepted via optimizer hooks →
         `OnFinalizePrepare` → `PhysicalSiriusExecution`, which calls the same
         `sirius_execute_query`. Small (101 + 175 lines)
-  - [ ] `src/sirius_interface.cpp` — *read*; DuckDB-facing API, query lifecycle (where
+  - [x] `src/sirius_interface.cpp` — *read*; DuckDB-facing API, query lifecycle (where
         both doorways meet)
-  - [ ] `src/sirius_engine.cpp` — *read closely*; pipeline construction, the
+  - [x] `src/sirius_engine.cpp` — *read closely*; pipeline construction, the
         orchestration core
-  - [ ] `src/planner/sirius_physical_plan_generator.cpp` — *read*; logical→physical,
+  - [x] `src/planner/sirius_physical_plan_generator.cpp` — *read*; logical→physical,
         + `docs/super-sirius/physical-plan-generation.md`
 - [ ] **Day 3 — Ownership & lifecycle.** `src/include/sirius_context.hpp` + the
   "Ownership Hierarchy" section of the architecture doc.
