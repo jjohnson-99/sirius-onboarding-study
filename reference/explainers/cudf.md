@@ -3,8 +3,9 @@
 `cudf::` calls are everywhere in Sirius — every operator's `execute()` makes one — but
 what *is* cuDF? Short version: it's the GPU library Sirius is built on.
 
-> **Prime around:** Week 2 — you hit `cudf::` in the first operator you read. Use
-> `/module-context` to load the cuDF module docs when a call is unfamiliar.
+> **Prime around:** Week 2 — you hit `cudf::` in the first operator you read. Read the cuDF
+> module docs (`.claude/skills/module-discover/docs/cudf/`) — or load via `/module-context`
+> in a Claude Code session — when a call is unfamiliar.
 
 ## What it is
 

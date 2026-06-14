@@ -4,8 +4,9 @@ Companion for Week 2, **Days 4–5** of [`onboarding-path.md`](onboarding-path.m
 tagged **read** — the operator that "closes the loop" on the end-to-end trace. Read
 with the `UNGROUPED_AGGREGATE` / `MERGE_AGGREGATE` entries in
 `docs/super-sirius/operators.md` and the `UNGROUPED_AGGREGATE` splitting diagram in
-`docs/super-sirius/physical-plan-generation.md` (Part 3). Load cuDF reduce/aggregation
-docs via `/module-context`.
+`docs/super-sirius/physical-plan-generation.md` (Part 3). Reference the cuDF
+reduce/aggregation module docs (`.claude/skills/module-discover/docs/cudf/modules/`; or load
+via `/module-context` in a Claude Code session).
 
 > Paths relative to the Sirius repo root. Lines as of 2026-06-10.
 
@@ -17,7 +18,9 @@ l_returnflag` — actually has a GROUP BY, so it uses the *grouped* aggregate
 you read the **ungrouped** sibling instead: it's the same two-phase structure with far
 less code (`cudf::reduce` over a whole column instead of grouped hashing), so you
 learn the pattern cleanly. Everything here transfers to the grouped case. Think of
-this as `SELECT SUM(l_quantity) FROM lineitem` (no GROUP BY) — the simpler cousin.
+this as `SELECT SUM(l_quantity) FROM lineitem` (no GROUP BY) — the simpler cousin. For where
+the *actual* grouping happens (`cudf::groupby`), see
+[`sirius_physical_grouped_aggregate.md`](file-maps/op/sirius_physical_grouped_aggregate.md).
 
 ## The big idea: aggregation is two-phase (local → merge)
 

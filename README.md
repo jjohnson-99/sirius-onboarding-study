@@ -27,8 +27,13 @@ sirius-onboarding-study/
 │       ├── cudf.md
 │       ├── cucascade.md
 │       ├── rmm.md
+│       ├── rapids-gpu-data-ecosystem.md
 │       ├── duckdb-extension-api.md
+│       ├── substrait-and-plan-irs.md
 │       ├── filters-and-expression-evaluation.md
+│       ├── types-duckdb-cudf-sirius.md
+│       ├── nulls-and-validity.md
+│       ├── testing-sirius.md
 │       ├── push-vs-pull-execution.md
 │       ├── duckdb-table-functions.md
 │       ├── client-connections.md
@@ -53,7 +58,8 @@ sirius-onboarding-study/
         ├── sirius_physical_operator.md            ↔ src/op/sirius_physical_operator.cpp
         ├── sirius_physical_limit.md               ↔ src/op/sirius_physical_limit.cpp
         ├── sirius_physical_duckdb_scan.md         ↔ src/op/sirius_physical_duckdb_scan.cpp
-        └── sirius_physical_ungrouped_aggregate.md ↔ src/op/sirius_physical_ungrouped_aggregate.cpp
+        ├── sirius_physical_ungrouped_aggregate.md ↔ src/op/sirius_physical_ungrouped_aggregate.cpp
+        └── sirius_physical_grouped_aggregate.md   ↔ src/op/sirius_physical_grouped_aggregate.cpp (stub)
 ```
 
 `file-maps/` mirrors the repo's `src/` tree: a source file at `src/<path>/<name>.cpp`
@@ -71,7 +77,7 @@ as we work through [`onboarding-path.md`](onboarding-path.md); not all exist yet
 | [weeks/week2-concepts.md](weeks/week2-concepts.md) | Week 2 synthesis: the target query traced end-to-end through 8 stages, tying together every Week 2 file-map and mapped onto `execution-flow.md`. |
 | [reference/duckdb-types-glossary.md](reference/duckdb-types-glossary.md) | Shared reference for the recurring DuckDB types (`ClientContext`, `DataChunk`, `LogicalOperator`, …). Per-file maps link here instead of re-explaining. |
 | [reference/duckdb-source-map.md](reference/duckdb-source-map.md) | Pointers into **DuckDB's own source** (not in this repo) for the internals our notes reference — query lifecycle, extension API, logical plans, core types, optimizer. Read at Sirius's pinned commit. |
-| [reference/explainers/](reference/explainers/README.md) | Long-form background concepts intuitive to DB folks but not assumed of the reader — OLTP vs. OLAP, columnar vs. row storage, vectorized execution, GPU vs. CPU (+ warps/execution model, CUDA streams/async, memory & spilling), cuDF, cuCascade, RMM, filters & expression evaluation, push vs. pull, DuckDB extension API, table functions, client connections & config scope, aggregation & GROUP BY, morsel-driven parallelism, hash join build/probe, sorting & ORDER BY, Parquet, Iceberg, MVCC. One topic per file, each tagged with the onboarding week to **prime around** — and arranged into a "why GPU-native SQL" reading thread (see its README). |
+| [reference/explainers/](reference/explainers/README.md) | Long-form background concepts intuitive to DB folks but not assumed of the reader — OLTP vs. OLAP, columnar vs. row storage, vectorized execution, GPU vs. CPU (+ warps/execution model, CUDA streams/async, memory & spilling), cuDF, cuCascade, RMM, RAPIDS ecosystem, filters & expression evaluation, types (DuckDB↔cuDF↔Sirius), NULLs & validity, testing, push vs. pull, DuckDB extension API, Substrait & plan IRs, table functions, client connections & config scope, aggregation & GROUP BY, morsel-driven parallelism, hash join build/probe, sorting & ORDER BY, Parquet, Iceberg, MVCC. One topic per file, each tagged with the onboarding week to **prime around** — and arranged into a "why GPU-native SQL" reading thread (see its README). |
 | [file-maps/](file-maps/README.md) | **Index of the per-file maps + the orchestration-spine call walk** stitching the four doorway/lifecycle/engine maps into one end-to-end control-flow trace. |
 | [file-maps/sirius_extension.md](file-maps/sirius_extension.md) | `src/sirius_extension.cpp` — the doorway: extension load (Step 0) + the explicit `gpu_execution` path (Step 1b). |
 | [file-maps/transparent/sirius_optimizer_extension.md](file-maps/transparent/sirius_optimizer_extension.md) | The **primary** doorway (Steps 1–2): plain-SQL interception via optimizer hooks + `PhysicalSiriusExecution`. Covers both `src/transparent/*.cpp`; converges with the explicit path on `sirius_interface`. |
@@ -83,6 +89,7 @@ as we work through [`onboarding-path.md`](onboarding-path.md); not all exist yet
 | [file-maps/op/sirius_physical_limit.md](file-maps/op/sirius_physical_limit.md) | `src/op/sirius_physical_limit.cpp` (warm-up): the simplest `execute()` — parallel LIMIT via atomic claim + `cudf::slice`. |
 | [file-maps/op/sirius_physical_duckdb_scan.md](file-maps/op/sirius_physical_duckdb_scan.md) | `src/op/sirius_physical_duckdb_scan.cpp` (tiny): the `DUCKDB_SCAN` source — a scan *descriptor*; execution lives in the scan executor. |
 | [file-maps/op/sirius_physical_ungrouped_aggregate.md](file-maps/op/sirius_physical_ungrouped_aggregate.md) | `src/op/sirius_physical_ungrouped_aggregate.cpp`: the two-phase local→merge aggregate (`cudf::reduce`); closes the Week 2 trace. |
+| [file-maps/op/sirius_physical_grouped_aggregate.md](file-maps/op/sirius_physical_grouped_aggregate.md) | `src/op/sirius_physical_grouped_aggregate.cpp` *(stub)*: the actual `GROUP BY` operator (`cudf::groupby`) — where the Week 2 query's grouping happens; `HASH_GROUP_BY → PARTITION → MERGE_GROUP_BY`. |
 
 ## Notes
 

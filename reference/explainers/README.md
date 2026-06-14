@@ -45,14 +45,19 @@ plus **[GPU memory & spilling](gpu-memory-and-spilling.md)** (how Sirius copes w
 GPU memory — reservations + tiered spill; Week 6 infrastructure), and **[cuDF](cudf.md)**
 (the GPU primitive library the operators actually call), and **[cuCascade](cucascade.md)**
 (the tiered-memory & data-flow library behind the batches/repositories), on
-**[RMM](rmm.md)** (the GPU allocation layer beneath both). *DB context:*
+**[RMM](rmm.md)** (the GPU allocation layer beneath both); zoom out with
+**[RAPIDS & the GPU data ecosystem](rapids-gpu-data-ecosystem.md)** (where these libraries
+and Sirius sit). *DB context:*
 **[DuckDB extension API](duckdb-extension-api.md)** (how Sirius plugs into DuckDB),
-**[table functions](duckdb-table-functions.md)** (how queries and data enter),
+**[Substrait & plan IRs](substrait-and-plan-irs.md)** (how query plans are represented;
+mostly legacy/vestigial in Sirius), **[table functions](duckdb-table-functions.md)** (how
+queries and data enter),
 **[Parquet](parquet-format.md)** (columnar *on disk*) + **[Iceberg](iceberg-table-format.md)**
 (table format over it), **[client connections](client-connections.md)** (sessions & config
 scope), and
 **[MVCC](mvcc-concurrency-control.md)** (concurrency control — Sirius defers to DuckDB;
-optional).
+optional). *Execution & dev:* **[types (DuckDB↔cuDF↔Sirius)](types-duckdb-cudf-sirius.md)**,
+**[NULLs & validity](nulls-and-validity.md)**, and **[testing Sirius](testing-sirius.md)**.
 
 ## Index — by when to prime
 
@@ -73,12 +78,17 @@ grounded — the week is a *suggestion*, not a gate.
 | [cudf.md](cudf.md) | Week 2 | What cuDF/libcudf is (RAPIDS GPU DataFrame library), `cudf::column`/`table`, the relational primitives it provides, and how Sirius operators are mostly thin translators from DuckDB plan nodes to `cudf::` calls. |
 | [cucascade.md](cucascade.md) | Week 5 → 6 | The tiered-memory & data-flow library: `memory_space`/`Tier`, data representations, the `data_batch` (+ read-only locks), tier converters (spill/promote), and `shared_data_repository` — the residency counterpart to cuDF's compute. |
 | [rmm.md](rmm.md) | Week 2 → 6 | RMM (RAPIDS Memory Manager): the GPU allocation floor — memory resources, the pool MR, stream-ordered allocation, device buffers, and the `rmm::cuda_stream_view` in every `execute()`. Beneath cuDF & cuCascade. |
+| [rapids-gpu-data-ecosystem.md](rapids-gpu-data-ecosystem.md) | Week 1–2 | Orientation: what RAPIDS is (cuDF/RMM/cuML/Spark-RAPIDS…), Apache Arrow as the columnar glue, the composable-data-systems trend, and where Sirius (DuckDB front end + libcudf execution) and its GPU-SQL cousins fit. |
 | [push-vs-pull-execution.md](push-vs-pull-execution.md) | Week 1–2 → 4 | Who drives data through the operator tree — demand-driven pull (Volcano) vs. data-driven push — the trade-offs, and why Sirius's ports/barriers/task-creator are exactly what a push-between-pipelines model needs. |
 | [duckdb-extension-api.md](duckdb-extension-api.md) | Week 2 | How Sirius plugs into DuckDB (it's an extension, not a fork): the load entry point and the extension points — table functions, SET options, the `OptimizerExtension` + `ClientContextState` rebind that powers transparent execution, `ExtensionCallback`, replacement scans. |
+| [substrait-and-plan-irs.md](substrait-and-plan-irs.md) | Week 2 | What a plan IR is (in-memory vs portable), what Substrait is (the open plan-interchange standard), and why Super Sirius translates DuckDB's `LogicalOperator` tree *directly* (Substrait being legacy/vestigial here). |
 | [duckdb-table-functions.md](duckdb-table-functions.md) | Week 2 | What a DuckDB *table function* is, why it's called "table," and what the bind/execute two-callback contract means — with `range(5)` and the `gpu_execution`/`read_parquet` pairs. |
 | [client-connections.md](client-connections.md) | Week 2 | The database → connection → query hierarchy, what's per-database (`DBConfig`) vs per-connection (`ClientConfig`), Sirius's shared/serialized runtime, and the per-query optimizer disable/restore lifecycle as a worked example. |
 | [aggregation-and-group-by.md](aggregation-and-group-by.md) | Week 2 | Ungrouped vs grouped aggregates, hash vs sort grouping, the accumulator model, partial/combinable aggregation (local→merge), the distributive/algebraic/holistic classes (why AVG decomposes), and Sirius's two-phase cuDF implementation. |
 | [filters-and-expression-evaluation.md](filters-and-expression-evaluation.md) | Week 3 | Expressions as ASTs; projection vs filter (predicate → mask → stream compaction); the materialize / AST-interpret / JIT-fuse strategies and why fusing matters on a bandwidth-bound GPU; filter pushdown; Sirius's `gpu_expression_executor` strategy knob. |
+| [types-duckdb-cudf-sirius.md](types-duckdb-cudf-sirius.md) | Week 3 | The three type systems (DuckDB `LogicalType` ↔ `sirius::logical_type` ↔ `cudf::data_type`), supported types & fallbacks, DECIMAL/fixed-point, casting, and the int128/HUGEINT gap behind the BIGINT CPU fallbacks. |
+| [nulls-and-validity.md](nulls-and-validity.md) | Week 3 | SQL three-valued logic (NULL = UNKNOWN) and its rules (WHERE, aggregates, joins), plus cuDF's out-of-band validity bitmask — how three-valued logic becomes mask arithmetic on the GPU. |
+| [testing-sirius.md](testing-sirius.md) | Week 3 | The two test systems — SQLLogicTest (`.test` end-to-end SQL) and Catch2 C++ unit tests — their formats, how to run just yours, and the first-PR loop (build → test → pre-commit → PR). |
 | [sorting-and-order-by.md](sorting-and-order-by.md) | Week 3 → 5 | Why sorting blocks; parallel sample sort (local sort → sample boundaries → **range**-partition → merge) vs the hash-partition of join/agg; TOP-N as partial sort; GPU radix sort; Sirius's 4-phase `ORDER_BY`/`SORT_SAMPLE`/`SORT_PARTITION`/`MERGE_SORT`. |
 | [morsel-driven-parallelism.md](morsel-driven-parallelism.md) | Week 4 | How analytical engines spread work across cores/GPUs — morsels + work-stealing vs. plan-time exchange operators — and how it maps onto Sirius's task scheduler/creator. |
 | [hash-join-build-probe.md](hash-join-build-probe.md) | Week 1 → 5 | Why hash join beats nested loops, the build (small side → hash table) / probe (stream big side) split, join types, partitioning when it won't fit, the build-side pipeline breaker, and Sirius's cuDF join modes. |

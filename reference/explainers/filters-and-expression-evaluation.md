@@ -9,7 +9,8 @@ condition and aggregate argument.
 
 > **Prime around:** Week 3 — the expression executor is the Week 3 Days 1–2 read
 > (`docs/super-sirius/expression-executor.md`, `src/expression_executor/`); load the cuDF
-> `ast` / `unary_binary` module docs via `/module-context`.
+> `ast` / `unary_binary` module docs (`.claude/skills/module-discover/docs/cudf/modules/`;
+> or via `/module-context` in a Claude Code session).
 
 ## An expression is a tree
 

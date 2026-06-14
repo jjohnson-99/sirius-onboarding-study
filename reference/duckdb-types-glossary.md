@@ -83,7 +83,7 @@ These types carry state between them — and this same contract underlies Sirius
   object a user program holds. Inside Sirius it's used to spin up internal connections
   (e.g. for CPU fallback). **Think:** a programmatic SQL client.
 
-## Related types you'll see in passing
+## Related types & idioms you'll see in passing
 
 - **`Value`** — a single typed SQL value (the scalar in `inputs[0]`); `.ToString()`,
   `.GetValue<T>()`, `.IsNull()`. **Think:** one cell, type-tagged.
@@ -93,3 +93,12 @@ These types carry state between them — and this same contract underlies Sirius
 - **`OptimizerType`** — an enum naming individual optimizer passes (`IN_CLAUSE`,
   `COMPRESSED_MATERIALIZATION`, …); used in the disabled-optimizer set. **Think:** a
   switch label for one optimizer rule.
+- **`D_ASSERT(cond)`** *(macro, not a type — `duckdb/common/assert.hpp`)* — a debug-time
+  **invariant check**, all over the Sirius code (`D_ASSERT(sirius_active_query)`). Active
+  only in `DEBUG` / `DUCKDB_FORCE_ASSERT` builds; **compiled to a no-op in release**
+  (`NDEBUG`). When it trips it **throws `duckdb::InternalException`** ("Assertion
+  triggered in file … line …: <cond>") — *not* `abort()` — so it unwinds like any
+  exception (and is caught by Sirius's `try/catch` → errored result / fallback). **Think:**
+  documented "this should never happen" assumption — enforced in debug/CI, absent (and *not*
+  a safety net) in release. Recoverable/user errors use real exceptions
+  (`InvalidInputException`, …) instead.

@@ -26,6 +26,11 @@ effort, so these signal how hard to lean in:*
 
 Untagged files are self-evidently small; just read them.
 
+> **About `/module-context`** (referenced below): it's a Claude Code *skill* in the Sirius
+> repo — not a shell command. In a Claude Code session it loads the relevant dependency API
+> docs (cuDF / RMM / cuCascade / DuckDB) into context. **Reading solo, just open those docs
+> directly** at `.claude/skills/module-discover/docs/<lib>/modules/<name>.md` in the Sirius repo.
+
 ---
 
 ## Week 1 — Build it, run it, learn the vocabulary
@@ -88,7 +93,9 @@ Target query: `SELECT l_returnflag, SUM(l_quantity) FROM lineitem GROUP BY l_ret
   - [ ] `src/op/sirius_physical_limit.cpp` (warm-up; tiny)
   - [ ] `src/op/sirius_physical_duckdb_scan.cpp` (tiny)
   - [ ] `src/op/sirius_physical_ungrouped_aggregate.cpp` — *read*; closes the loop
-  - [ ] Use `/module-context` so relevant cuDF API docs load on cuDF calls.
+  - [ ] Keep the relevant cuDF API docs handy on cuDF calls (open
+        `.claude/skills/module-discover/docs/cudf/modules/`, or `/module-context` in a
+        Claude Code session).
 - [ ] **Weekend (4h).** Set `SIRIUS_LOG_LEVEL=debug`, run the query, then use
   `tools/parse_pipeline_log.py` to match per-operator row counts to the operators
   you read.
@@ -103,8 +110,9 @@ Target query: `SELECT l_returnflag, SUM(l_quantity) FROM lineitem GROUP BY l_ret
 Goal: depth on GPU computation in operators, and land a small PR.
 
 - [ ] **Days 1–2 — Expressions on GPU.** `docs/super-sirius/expression-executor.md`
-  + `src/expression_executor/`. Load `cudf/modules/ast.md` and `unary_binary.md`
-  via `/module-context`.
+  + `src/expression_executor/`. Reference the cuDF `ast` and `unary_binary` module docs
+  (`.claude/skills/module-discover/docs/cudf/modules/{ast,unary_binary}.md`; or load via
+  `/module-context`).
 - [ ] **Day 3 — A medium operator.** *read closely* — `src/op/sirius_physical_top_n.cpp`
   or `sirius_physical_partition.cpp`, plus its test in `test/cpp/operator/`.
 - [ ] **Days 4–5 — Ship something small.** Add an SQL logic test under `test/sql/`,
@@ -164,7 +172,7 @@ flows between pipelines without races.
         `.claude/skills/module-discover/docs/cudf/` modules.
 - [ ] **Week 7 — Non-trivial contribution.** Add/extend an operator, improve a
   scheduling/memory path, or add a fallback case.
-  - [ ] `/module-context` before implementing
+  - [ ] `/module-context` before implementing (loads dependency API docs — see top note)
   - [ ] Follow "Adding New Operators" in `CLAUDE.md`
   - [ ] Write both `test/cpp/` and `test/sql/` tests
   - [ ] `/code-review` before pushing

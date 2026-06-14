@@ -89,12 +89,26 @@ actually reads it, batch by batch, onto the GPU, setting `exhausted` when done. 
 batch is a `pipelineable_operator_data` wrapping a `cudf::table`.
 
 ### 7. Compute — the GPU does the work
-**File maps:** [`op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md), [`op/sirius_physical_limit.md`](file-maps/op/sirius_physical_limit.md) (the `execute()` template), [`op/sirius_physical_ungrouped_aggregate.md`](file-maps/op/sirius_physical_ungrouped_aggregate.md) · **doc:** Steps 7–8
+**File maps:** [`op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md), [`op/sirius_physical_limit.md`](file-maps/op/sirius_physical_limit.md) (the `execute()` template), [`op/sirius_physical_ungrouped_aggregate.md`](file-maps/op/sirius_physical_ungrouped_aggregate.md) (the simpler sibling you read), [`op/sirius_physical_grouped_aggregate.md`](file-maps/op/sirius_physical_grouped_aggregate.md) (**what this query uses**) · **doc:** Steps 7–8
 
-The GPU pipeline executor calls each operator's `execute()` on a CUDA stream. For the
-aggregate this is the **two-phase** local→merge pattern: phase-1 `execute()` computes a
-partial `SUM` per batch with `cudf::reduce`; phase-2 `merge` combines all partials into
-the final per-group answer. **This is where `SUM(l_quantity)` is actually computed.**
+The GPU pipeline executor calls each operator's `execute()` on a CUDA stream. Our query has a
+`GROUP BY`, so its aggregate is the **grouped** path — a three-operator chain
+(`physical-plan-generation.md`): `HASH_GROUP_BY` → `PARTITION` → `MERGE_GROUP_BY`:
+
+- **`HASH_GROUP_BY`** (`sirius_physical_grouped_aggregate`): for each scanned batch,
+  `cudf::groupby` buckets rows by `l_returnflag` and sums `l_quantity` **within that batch** —
+  *this is where the grouping happens* — producing partial per-group rows.
+- **`PARTITION`**: hash-partitions those partials **by `l_returnflag`** so the same group from
+  different batches colocates.
+- **`MERGE_GROUP_BY`**: combines the partials per group → the final one-row-per-group answer.
+
+So `SUM(l_quantity)` *per group* is computed by `cudf::groupby` (local) then finalized in the
+merge. ⚠️ The **ungrouped** operator you read closely (`cudf::reduce`, **one global group, no
+`PARTITION`**) is the simpler *no-`GROUP BY`* sibling — same two-phase local→merge plumbing,
+minus the grouping. You learned the plumbing there; the grouped operator adds `cudf::groupby`
++ partition-by-key (see its [stub map](file-maps/op/sirius_physical_grouped_aggregate.md) and
+the [aggregation explainer](reference/explainers/aggregation-and-group-by.md)).
+
 The task creator (Week 4) keeps scheduling downstream operators via the
 `get_next_task_hint()` port/barrier logic in the base operator.
 
