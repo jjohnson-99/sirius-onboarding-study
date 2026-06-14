@@ -54,7 +54,7 @@ For the *conceptual* version of the same trace (operators, scan, result included
 | **Engine** | [sirius_engine](file-maps/sirius_engine.md) |
 | **Ownership** | [sirius_context](file-maps/sirius_context.md) |
 | **Plan** | [planner/sirius_physical_plan_generator](file-maps/planner/sirius_physical_plan_generator.md) |
-| **Operators** | [op/sirius_physical_operator](file-maps/op/sirius_physical_operator.md) (base), [limit](file-maps/op/sirius_physical_limit.md), [duckdb_scan](file-maps/op/sirius_physical_duckdb_scan.md), [ungrouped_aggregate](file-maps/op/sirius_physical_ungrouped_aggregate.md), [grouped_aggregate](file-maps/op/sirius_physical_grouped_aggregate.md) *(stub)* |
+| **Operators** | [op/sirius_physical_operator](file-maps/op/sirius_physical_operator.md) (base), [limit](file-maps/op/sirius_physical_limit.md), [duckdb_scan](file-maps/op/sirius_physical_duckdb_scan.md), [ungrouped_aggregate](file-maps/op/sirius_physical_ungrouped_aggregate.md), [grouped_aggregate](file-maps/op/sirius_physical_grouped_aggregate.md) |
 
 Full one-line descriptions: the [top-level README](README.md). Which maps carry a call
 sequence (orchestration files only) is per the rule in the methodology notes.

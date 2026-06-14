@@ -59,7 +59,7 @@ sirius-onboarding-study/
         ├── sirius_physical_limit.md               ↔ src/op/sirius_physical_limit.cpp
         ├── sirius_physical_duckdb_scan.md         ↔ src/op/sirius_physical_duckdb_scan.cpp
         ├── sirius_physical_ungrouped_aggregate.md ↔ src/op/sirius_physical_ungrouped_aggregate.cpp
-        └── sirius_physical_grouped_aggregate.md   ↔ src/op/sirius_physical_grouped_aggregate.cpp (stub)
+        └── sirius_physical_grouped_aggregate.md   ↔ src/op/sirius_physical_grouped_aggregate.cpp
 ```
 
 `file-maps/` mirrors the repo's `src/` tree: a source file at `src/<path>/<name>.cpp`
@@ -89,7 +89,7 @@ as we work through [`onboarding-path.md`](onboarding-path.md); not all exist yet
 | [file-maps/op/sirius_physical_limit.md](file-maps/op/sirius_physical_limit.md) | `src/op/sirius_physical_limit.cpp` (warm-up): the simplest `execute()` — parallel LIMIT via atomic claim + `cudf::slice`. |
 | [file-maps/op/sirius_physical_duckdb_scan.md](file-maps/op/sirius_physical_duckdb_scan.md) | `src/op/sirius_physical_duckdb_scan.cpp` (tiny): the `DUCKDB_SCAN` source — a scan *descriptor*; execution lives in the scan executor. |
 | [file-maps/op/sirius_physical_ungrouped_aggregate.md](file-maps/op/sirius_physical_ungrouped_aggregate.md) | `src/op/sirius_physical_ungrouped_aggregate.cpp`: the two-phase local→merge aggregate (`cudf::reduce`); closes the Week 2 trace. |
-| [file-maps/op/sirius_physical_grouped_aggregate.md](file-maps/op/sirius_physical_grouped_aggregate.md) | `src/op/sirius_physical_grouped_aggregate.cpp` *(stub)*: the actual `GROUP BY` operator (`cudf::groupby`) — where the Week 2 query's grouping happens; `HASH_GROUP_BY → PARTITION → MERGE_GROUP_BY`. |
+| [file-maps/op/sirius_physical_grouped_aggregate.md](file-maps/op/sirius_physical_grouped_aggregate.md) | `src/op/sirius_physical_grouped_aggregate.cpp` (+ merge): the actual `GROUP BY` operator (`cudf::groupby`) — where the Week 2 query's grouping happens; `HASH_GROUP_BY → PARTITION → MERGE_GROUP_BY`. |
 
 ## Notes
 

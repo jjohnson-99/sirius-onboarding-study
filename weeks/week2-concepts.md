@@ -106,7 +106,7 @@ So `SUM(l_quantity)` *per group* is computed by `cudf::groupby` (local) then fin
 merge. ⚠️ The **ungrouped** operator you read closely (`cudf::reduce`, **one global group, no
 `PARTITION`**) is the simpler *no-`GROUP BY`* sibling — same two-phase local→merge plumbing,
 minus the grouping. You learned the plumbing there; the grouped operator adds `cudf::groupby`
-+ partition-by-key (see its [stub map](file-maps/op/sirius_physical_grouped_aggregate.md) and
++ partition-by-key (see its [map](file-maps/op/sirius_physical_grouped_aggregate.md) and
 the [aggregation explainer](reference/explainers/aggregation-and-group-by.md)).
 
 The task creator (Week 4) keeps scheduling downstream operators via the
