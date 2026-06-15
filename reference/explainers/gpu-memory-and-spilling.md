@@ -62,7 +62,7 @@ This is **admission control** — don't launch work you can't fit — and it pre
 thrash-and-OOM spiral.
 
 The estimate comes from the operator interface you saw in
-[`file-maps/op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md):
+[`file-maps/op/sirius_physical_operator.md`](../../file-maps/op/sirius_physical_operator.md):
 `no_history_peak_memory_estimate()` (a first-run guess, default ~2× input bytes) and
 `get_estimated_size_in_bytes()`; later runs refine it from execution history.
 
@@ -129,7 +129,7 @@ close to the right GPU. Cross-GPU movement uses P2P + the stream-lineage orderin
   the async copies spilling uses.
 - [`gpu-vs-cpu-for-databases.md`](gpu-vs-cpu-for-databases.md) — GPU memory as the scarce
   resource (the flip side of bandwidth).
-- [`file-maps/sirius_context.md`](file-maps/sirius_context.md) — owns the memory-reservation
+- [`file-maps/sirius_context.md`](../../file-maps/sirius_context.md) — owns the memory-reservation
   manager and the per-space downgrade executors;
   [`push-vs-pull-execution.md`](push-vs-pull-execution.md) — the repositories where
   intermediates (spill candidates) live.

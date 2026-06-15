@@ -4,8 +4,8 @@ Whether a database lays its data out by **row** or by **column** sounds like an
 internal implementation detail — but for an analytics engine it's *the* foundational
 choice, and it's why DuckDB, cuDF, and Sirius all look the way they do. It also
 explains the `DataChunk`/`Vector` types in the
-[`reference/duckdb-types-glossary.md`](reference/duckdb-types-glossary.md) and the vectorized
-execution model from [`weeks/week1-concepts.md`](weeks/week1-concepts.md).
+[`reference/duckdb-types-glossary.md`](../duckdb-types-glossary.md) and the vectorized
+execution model from [`weeks/week1-concepts.md`](../../weeks/week1-concepts.md).
 
 > **Prime around:** Week 1 — foundational background; read alongside the Week 1
 > DB-theory readings, before tracing code.
@@ -60,7 +60,7 @@ A column is a contiguous array, so an operator can run a tight loop over it — 
 CPU SIMD, and *essential* for GPUs, where thousands of threads each process one element
 of the array in lockstep (SIMT). This is why `cudf::reduce(l_quantity_column, SUM)`
 (the actual GPU work in
-[`file-maps/op/sirius_physical_ungrouped_aggregate.md`](file-maps/op/sirius_physical_ungrouped_aggregate.md))
+[`file-maps/op/sirius_physical_ungrouped_aggregate.md`](../../file-maps/op/sirius_physical_ungrouped_aggregate.md))
 is one contiguous, massively-parallel pass. You *cannot* run an efficient GPU kernel
 over row-major tuples; columnar is a prerequisite for the whole Sirius design.
 
@@ -99,6 +99,6 @@ on, it's the substrate.
 
 - [`parquet-format.md`](parquet-format.md) — columnar *on disk*: how Parquet physically
   stores columns (and why Sirius reads it straight onto the GPU).
-- [`weeks/week1-concepts.md`](weeks/week1-concepts.md) — vectorized execution
+- [`weeks/week1-concepts.md`](../../weeks/week1-concepts.md) — vectorized execution
   and the operator model that columnar enables.
-- [`reference/duckdb-types-glossary.md`](reference/duckdb-types-glossary.md) — `DataChunk` / `Vector`.
+- [`reference/duckdb-types-glossary.md`](../duckdb-types-glossary.md) — `DataChunk` / `Vector`.

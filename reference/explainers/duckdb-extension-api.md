@@ -6,9 +6,9 @@ whole "doorway" layer: `sirius_extension.cpp`, the transparent optimizer hooks, 
 `SiriusContext`. This is the framework behind those file-maps.
 
 > **Prime around:** Week 2 (Days 1–3) — the doorway files
-> ([`file-maps/sirius_extension.md`](file-maps/sirius_extension.md),
-> [`file-maps/transparent/sirius_optimizer_extension.md`](file-maps/transparent/sirius_optimizer_extension.md),
-> [`file-maps/sirius_context.md`](file-maps/sirius_context.md)) *are* extension-API code.
+> ([`file-maps/sirius_extension.md`](../../file-maps/sirius_extension.md),
+> [`file-maps/transparent/sirius_optimizer_extension.md`](../../file-maps/transparent/sirius_optimizer_extension.md),
+> [`file-maps/sirius_context.md`](../../file-maps/sirius_context.md)) *are* extension-API code.
 
 ## What an extension is
 
@@ -23,7 +23,7 @@ execution at the extension points below — rather than reimplementing a SQL fro
 Every extension has an entry function DuckDB calls at load time
 (`DUCKDB_CPP_EXTENSION_ENTRY` → `LoadInternal` in Sirius). It receives an
 `ExtensionLoader` / `DatabaseInstance` and **registers everything** in one place. (That's
-Step 0 in [`file-maps/sirius_extension.md`](file-maps/sirius_extension.md).)
+Step 0 in [`file-maps/sirius_extension.md`](../../file-maps/sirius_extension.md).)
 Loading a custom/unsigned build needs `allow_unsigned_extensions`.
 
 ## The extension points (and which Sirius uses)
@@ -52,14 +52,14 @@ Most of Sirius's "magic" is two extension points working together:
    extension **replace DuckDB's physical plan with its own** — a `PhysicalSiriusExecution`
    operator. So plain SQL transparently runs on the GPU, with **no new syntax**, by
    intercepting at these two seams. (Steps 1–2 in
-   [`file-maps/transparent/sirius_optimizer_extension.md`](file-maps/transparent/sirius_optimizer_extension.md).)
+   [`file-maps/transparent/sirius_optimizer_extension.md`](../../file-maps/transparent/sirius_optimizer_extension.md).)
 
 Underneath both, **`ClientContextState`** gives Sirius a place to own its per-connection
 GPU runtime with lifecycle hooks, and an **`ExtensionCallback`** registers that state on
 each connection (see [`client-connections.md`](client-connections.md) for the
 session/lifecycle model). The relevant DuckDB types —`ExtensionLoader`, `DatabaseInstance`,
 `DBConfig`, `ClientContext` — are in
-[`reference/duckdb-types-glossary.md`](reference/duckdb-types-glossary.md).
+[`reference/duckdb-types-glossary.md`](../duckdb-types-glossary.md).
 
 ## Build / packaging (briefly)
 
@@ -78,10 +78,10 @@ this table in hand and each one is "Sirius using extension point X."
 
 ## See also
 
-- [`file-maps/sirius_extension.md`](file-maps/sirius_extension.md) — the registration code;
-  [`file-maps/sirius_context.md`](file-maps/sirius_context.md) — `ClientContextState` +
+- [`file-maps/sirius_extension.md`](../../file-maps/sirius_extension.md) — the registration code;
+  [`file-maps/sirius_context.md`](../../file-maps/sirius_context.md) — `ClientContextState` +
   `OnFinalizePrepare`;
-  [`file-maps/transparent/sirius_optimizer_extension.md`](file-maps/transparent/sirius_optimizer_extension.md)
+  [`file-maps/transparent/sirius_optimizer_extension.md`](../../file-maps/transparent/sirius_optimizer_extension.md)
   — the optimizer hooks.
 - [`duckdb-table-functions.md`](duckdb-table-functions.md) — the bind/execute contract of
   the table-function point; [`client-connections.md`](client-connections.md) — the

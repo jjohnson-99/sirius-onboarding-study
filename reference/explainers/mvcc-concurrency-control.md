@@ -6,7 +6,7 @@ modern answer is **MVCC** (Multi-Version Concurrency Control). It's the mechanis
 makes the "multiple connections, concurrent" claim in
 [`client-connections.md`](client-connections.md) actually safe.
 
-> **Prime around:** Optional / background. The [onboarding plan](onboarding-path.md)
+> **Prime around:** Optional / background. The [onboarding plan](../../onboarding-path.md)
 > deliberately *defers* OLTP storage-engine material (MVCC, WAL, B-trees) — Sirius
 > doesn't implement any of it. Read this only if you're curious how concurrent DuckDB
 > connections stay consistent; it pairs with `client-connections.md`.
@@ -79,7 +79,7 @@ Sirius's *own* concurrency problem is a different one: not transactional isolati
 **GPU-resource scheduling** — serializing the shared GPU runtime across connections
 (`query_lifecycle_mutex_`) and dispatching tasks across workers/GPUs (see
 [`client-connections.md`](client-connections.md) and
-[`file-maps/sirius_context.md`](file-maps/sirius_context.md)). So when you see
+[`file-maps/sirius_context.md`](../../file-maps/sirius_context.md)). So when you see
 "concurrency" in Sirius, it means *thread/GPU scheduling*, not *MVCC* — those live in two
 different worlds, and MVCC is firmly DuckDB's.
 
@@ -87,7 +87,7 @@ different worlds, and MVCC is firmly DuckDB's.
 
 - [`client-connections.md`](client-connections.md) — connections/sessions and why
   Sirius serializes its shared runtime.
-- [`reference/duckdb-types-glossary.md`](reference/duckdb-types-glossary.md) — `ClientContext`,
+- [`reference/duckdb-types-glossary.md`](../duckdb-types-glossary.md) — `ClientContext`,
   `DatabaseInstance` (a transaction runs within a `ClientContext`).
 - *Paper (deep, optional):* Neumann, Mühlbauer, Kemper, "Fast Serializable Multi-Version
   Concurrency Control for Main-Memory Database Systems" (2015).

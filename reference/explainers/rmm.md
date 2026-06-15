@@ -47,7 +47,7 @@ through every call.
   GPU tier is an RMM device pool, and Sirius also wires **pinned host** resources (e.g. the
   NUMA small-pinned MR) for the host tier and cuDF's pinned-memory path.
 - **The stream everywhere.** `rmm::cuda_stream_view` is the stream type in `execute()`
-  (see [`file-maps/op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md)),
+  (see [`file-maps/op/sirius_physical_operator.md`](../../file-maps/op/sirius_physical_operator.md)),
   and `cuda_set_device_raii` switches GPUs for multi-GPU work.
 
 ## The layering (RMM, cuCascade, cuDF)

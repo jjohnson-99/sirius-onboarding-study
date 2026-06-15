@@ -97,10 +97,10 @@ as we work through [`onboarding-path.md`](onboarding-path.md); not all exist yet
   `sirius/` checkout) so they are never tracked or committed.
 - These are study aids, not project documentation. Authoritative docs live in the
   Sirius repo at `docs/super-sirius/`.
-- **Path conventions:** links between these study notes are written relative to this
-  `sirius-onboarding-study` root (e.g. `file-maps/sirius_context.md`); references into
-  the Sirius source repo use that repo's path (e.g. `src/op/...`,
-  `docs/super-sirius/...`); a bare filename (e.g. `sirius_extension.md`) is a quick
-  same-directory reference.
+- **Path conventions:** links between these study notes are **relative to the file they're
+  in** (normal Markdown relative paths) — a bare filename for same-directory
+  (`sirius_interface.md`), `../` to go up (`../weeks/week2-concepts.md` from a `file-maps/`
+  file). References into the Sirius source repo use that repo's path (e.g. `src/op/...`,
+  `docs/super-sirius/...`) and won't resolve in this standalone copy.
 - Line numbers cited in the `file-maps/` notes were accurate as of 2026-06-10;
   re-confirm by grepping the function name if the source has moved.

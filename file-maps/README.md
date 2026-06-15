@@ -5,7 +5,7 @@ key types against `docs/super-sirius/execution-flow.md`; the **orchestration** m
 carry a `## Call sequence` tree. This page stitches those trees into one **end-to-end call
 walk** — the control-flow spine from "query enters" to "pipelines launched."
 
-(Structural parallel to [`reference/explainers/README.md`](reference/explainers/README.md),
+(Structural parallel to [`reference/explainers/README.md`](../reference/explainers/README.md),
 which holds the *conceptual* reading thread; this is the *code-level* spine.)
 
 ## The orchestration spine
@@ -37,24 +37,24 @@ Following the arrows and `· Step N` tags walks Steps **0 → 1 → 3 → 4 → 
 This is just the connective overview — the per-function detail lives in each map's own
 `## Call sequence`:
 
-- [`file-maps/sirius_extension.md`](file-maps/sirius_extension.md#call-sequence) — load + explicit doorway
-- [`file-maps/transparent/sirius_optimizer_extension.md`](file-maps/transparent/sirius_optimizer_extension.md#call-sequence) — transparent doorway
-- [`file-maps/sirius_interface.md`](file-maps/sirius_interface.md#call-sequence) — lifecycle (Steps 3 & 9)
-- [`file-maps/sirius_engine.md`](file-maps/sirius_engine.md#call-sequence) — build + launch (Steps 4 & 5)
+- [`file-maps/sirius_extension.md`](sirius_extension.md#call-sequence) — load + explicit doorway
+- [`file-maps/transparent/sirius_optimizer_extension.md`](transparent/sirius_optimizer_extension.md#call-sequence) — transparent doorway
+- [`file-maps/sirius_interface.md`](sirius_interface.md#call-sequence) — lifecycle (Steps 3 & 9)
+- [`file-maps/sirius_engine.md`](sirius_engine.md#call-sequence) — build + launch (Steps 4 & 5)
 
 For the *conceptual* version of the same trace (operators, scan, result included), see
-[`weeks/week2-concepts.md`](weeks/week2-concepts.md).
+[`weeks/week2-concepts.md`](../weeks/week2-concepts.md).
 
 ## Maps by role
 
 | Role | Map(s) |
 |---|---|
-| **Doorways** | [sirius_extension](file-maps/sirius_extension.md), [transparent/sirius_optimizer_extension](file-maps/transparent/sirius_optimizer_extension.md) |
-| **Lifecycle** | [sirius_interface](file-maps/sirius_interface.md) |
-| **Engine** | [sirius_engine](file-maps/sirius_engine.md) |
-| **Ownership** | [sirius_context](file-maps/sirius_context.md) |
-| **Plan** | [planner/sirius_physical_plan_generator](file-maps/planner/sirius_physical_plan_generator.md) |
-| **Operators** | [op/sirius_physical_operator](file-maps/op/sirius_physical_operator.md) (base), [limit](file-maps/op/sirius_physical_limit.md), [duckdb_scan](file-maps/op/sirius_physical_duckdb_scan.md), [ungrouped_aggregate](file-maps/op/sirius_physical_ungrouped_aggregate.md), [grouped_aggregate](file-maps/op/sirius_physical_grouped_aggregate.md) |
+| **Doorways** | [sirius_extension](sirius_extension.md), [transparent/sirius_optimizer_extension](transparent/sirius_optimizer_extension.md) |
+| **Lifecycle** | [sirius_interface](sirius_interface.md) |
+| **Engine** | [sirius_engine](sirius_engine.md) |
+| **Ownership** | [sirius_context](sirius_context.md) |
+| **Plan** | [planner/sirius_physical_plan_generator](planner/sirius_physical_plan_generator.md) |
+| **Operators** | [op/sirius_physical_operator](op/sirius_physical_operator.md) (base), [limit](op/sirius_physical_limit.md), [duckdb_scan](op/sirius_physical_duckdb_scan.md), [ungrouped_aggregate](op/sirius_physical_ungrouped_aggregate.md), [grouped_aggregate](op/sirius_physical_grouped_aggregate.md) |
 
 Full one-line descriptions: the [top-level README](README.md). Which maps carry a call
 sequence (orchestration files only) is per the rule in the methodology notes.

@@ -1,6 +1,6 @@
 # `op/sirius_physical_ungrouped_aggregate.cpp` → Operator Map (loop-closer)
 
-Companion for Week 2, **Days 4–5** of [`onboarding-path.md`](onboarding-path.md),
+Companion for Week 2, **Days 4–5** of [`onboarding-path.md`](../../onboarding-path.md),
 tagged **read** — the operator that "closes the loop" on the end-to-end trace. Read
 with the `UNGROUPED_AGGREGATE` / `MERGE_AGGREGATE` entries in
 `docs/super-sirius/operators.md` and the `UNGROUPED_AGGREGATE` splitting diagram in
@@ -20,13 +20,13 @@ less code (`cudf::reduce` over a whole column instead of grouped hashing), so yo
 learn the pattern cleanly. Everything here transfers to the grouped case. Think of
 this as `SELECT SUM(l_quantity) FROM lineitem` (no GROUP BY) — the simpler cousin. For where
 the *actual* grouping happens (`cudf::groupby`), see
-[`sirius_physical_grouped_aggregate.md`](file-maps/op/sirius_physical_grouped_aggregate.md).
+[`sirius_physical_grouped_aggregate.md`](sirius_physical_grouped_aggregate.md).
 
 ## The big idea: aggregation is two-phase (local → merge)
 
 A pipeline runs in parallel over many input batches, so you can't sum a column in one
 shot. Sirius splits aggregation into two operators (the engine creates the pair in
-`construct_sirius_specific_operator`, see [`file-maps/sirius_engine.md`](file-maps/sirius_engine.md)):
+`construct_sirius_specific_operator`, see [`file-maps/sirius_engine.md`](../sirius_engine.md)):
 
 1. **`sirius_physical_ungrouped_aggregate`** (`UNGROUPED_AGGREGATE`) — runs per input
    batch, producing a **partial** aggregate (one row): `SUM` of this batch, `COUNT` of
@@ -114,4 +114,4 @@ traced a query from SQL string (`sirius_extension`) through lifecycle
 (`sirius_interface`), build/launch (`sirius_engine`), translation (plan generator),
 ownership (`sirius_context`), and down to the GPU `cudf::reduce` that computes the
 answer. That's the Week 2 checkpoint — synthesized in
-[`weeks/week2-concepts.md`](weeks/week2-concepts.md).
+[`weeks/week2-concepts.md`](../../weeks/week2-concepts.md).

@@ -72,5 +72,5 @@ expression-executor code — and the "why did this fall back?" questions — mak
 - [`filters-and-expression-evaluation.md`](filters-and-expression-evaluation.md) — where
   casts/types drive evaluation; [`aggregation-and-group-by.md`](aggregation-and-group-by.md) —
   decimal widening + the BIGINT-SUM fallback in code.
-- [`cudf.md`](cudf.md) — `cudf::column`/`data_type`; [`reference/duckdb-types-glossary.md`](reference/duckdb-types-glossary.md)
+- [`cudf.md`](cudf.md) — `cudf::column`/`data_type`; [`reference/duckdb-types-glossary.md`](../duckdb-types-glossary.md)
   — `LogicalType`.

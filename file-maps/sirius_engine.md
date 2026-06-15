@@ -1,6 +1,6 @@
 # `sirius_engine.cpp` → Execution-Flow Map
 
-Companion for Week 2, Days 1–2 of [`onboarding-path.md`](onboarding-path.md),
+Companion for Week 2, Days 1–2 of [`onboarding-path.md`](../onboarding-path.md),
 tagged **read closely** — the orchestration core. Read `src/sirius_engine.cpp` (+
 `src/include/sirius_engine.hpp`) with `docs/super-sirius/execution-flow.md` **and**
 `docs/super-sirius/physical-plan-generation.md` open. This map goes deep.
@@ -16,7 +16,7 @@ live.** The engine itself contains almost no GPU logic; it is the **builder +
 launcher**:
 
 - **build** — turn the physical-operator tree (from
-  [`planner/sirius_physical_plan_generator.md`](file-maps/planner/sirius_physical_plan_generator.md))
+  [`planner/sirius_physical_plan_generator.md`](planner/sirius_physical_plan_generator.md))
   into runnable *pipelines* (execution-flow **Step 4**),
 - **launch** — hand those pipelines to the `task_scheduler` and block until done
   (**Step 5**),
@@ -77,7 +77,7 @@ This is the part to read slowly — it's the whole of Step 4 in ~50 lines:
 2. **Build the meta-pipeline tree** (366–377) — create a `sirius_meta_pipeline` root
    and call `root_pipeline->build(plan)` then `->ready()`. This recurses through every
    operator's `build_pipelines()` (the base implementation is in
-   [`op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md)), producing
+   [`op/sirius_physical_operator.md`](op/sirius_physical_operator.md)), producing
    DuckDB-style pipelines (separate source/operators/sink). *This is plan-gen doc
    Part 2.*
 3. **Convert / split** (380–383) — `sirius_pipeline_converter(...).convert(root)` does
@@ -113,13 +113,13 @@ nothing; `execute()` runs. This mirrors `sirius_interface`'s pending/execute spl
 ## Types fundamental to *this* file
 
 Recurring DuckDB types (`ClientContext`, `QueryResult`) →
-[`duckdb-types-glossary.md`](reference/duckdb-types-glossary.md). The ones that
+[`duckdb-types-glossary.md`](../reference/duckdb-types-glossary.md). The ones that
 matter specifically here:
 
 - **`op::sirius_physical_operator`** *(Sirius base class)* — the node type of the
   physical plan the engine consumes. Owned via `sirius_owned_plan`; the live pointer
   is `sirius_physical_plan`. Full treatment in
-  [`op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md). **Think:** the
+  [`op/sirius_physical_operator.md`](op/sirius_physical_operator.md). **Think:** the
   GPU plan tree the engine turns into pipelines.
 - **`pipeline::sirius_meta_pipeline` / `sirius_pipeline`** *(Sirius types)* — a
   *meta-pipeline* is a group of pipelines sharing a sink; a *pipeline* is an ordered

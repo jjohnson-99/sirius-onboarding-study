@@ -1,6 +1,6 @@
 # `planner/sirius_physical_plan_generator.cpp` → Plan-Generation Map
 
-Companion for Week 2, Days 1–2 of [`onboarding-path.md`](onboarding-path.md),
+Companion for Week 2, Days 1–2 of [`onboarding-path.md`](../../onboarding-path.md),
 tagged **read**. Read `src/planner/sirius_physical_plan_generator.cpp` (+
 `src/include/planner/sirius_physical_plan_generator.hpp`) with
 `docs/super-sirius/physical-plan-generation.md` (**Part 1**) open — that doc's
@@ -80,11 +80,11 @@ as the simpler representative — same builder file, same two-phase shape.
 ## Types fundamental to *this* file
 
 - **`duckdb::LogicalOperator`** — the input node type (see
-  [`duckdb-types-glossary.md`](reference/duckdb-types-glossary.md)). The whole
+  [`duckdb-types-glossary.md`](../../reference/duckdb-types-glossary.md)). The whole
   file is a walk over this tree. **Think:** the *what-to-compute* tree.
 - **`op::sirius_physical_operator`** *(Sirius base)* — the output node type. **Think:**
   the *how-on-GPU* tree (detail in
-  [`file-maps/op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md)).
+  [`file-maps/op/sirius_physical_operator.md`](../op/sirius_physical_operator.md)).
 - **`duckdb::LogicalOperatorType`** — the enum the switch keys on; learning which
   values have arms here = learning Sirius's supported feature set. **Think:** the
   catalog of SQL constructs, each either handled or thrown.
@@ -94,7 +94,7 @@ as the simpler representative — same builder file, same two-phase shape.
 ## Takeaway
 
 This file decides *what* the GPU plan is (and whether the GPU can run the query at
-all); [`file-maps/sirius_engine.md`](file-maps/sirius_engine.md) decides *how* it runs (pipelines).
+all); [`file-maps/sirius_engine.md`](../sirius_engine.md) decides *how* it runs (pipelines).
 The per-operator `sirius_plan_*.cpp` builders are out of scope for Week 2 — the
 mapping table above is enough; you'll open individual builders only when adding or
 fixing a specific operator.

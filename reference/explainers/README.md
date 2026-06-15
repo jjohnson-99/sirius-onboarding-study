@@ -61,7 +61,7 @@ optional). *Execution & dev:* **[types (DuckDB↔cuDF↔Sirius)](types-duckdb-cu
 
 ## Index — by when to prime
 
-Ordered by **when to prime** (the week of [`onboarding-path.md`](onboarding-path.md)
+Ordered by **when to prime** (the week of [`onboarding-path.md`](../../onboarding-path.md)
 where the concept first earns its keep). Each file repeats its own "Prime around" cue up
 top. You'll also naturally reach for one whenever a map references a concept you want
 grounded — the week is a *suggestion*, not a gate.

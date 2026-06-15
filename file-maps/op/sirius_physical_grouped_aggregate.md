@@ -3,7 +3,7 @@
 **The operator the Week 2 example query actually uses** — `SELECT l_returnflag,
 SUM(l_quantity) … GROUP BY l_returnflag` → `HASH_GROUP_BY`. The plan had you read the
 *ungrouped* sibling
-([`file-maps/op/sirius_physical_ungrouped_aggregate.md`](file-maps/op/sirius_physical_ungrouped_aggregate.md))
+([`file-maps/op/sirius_physical_ungrouped_aggregate.md`](sirius_physical_ungrouped_aggregate.md))
 as a simpler stand-in; this map covers the real grouping path in full. Read with the
 `HASH_GROUP_BY` / `MERGE_GROUP_BY` entries in `docs/super-sirius/operators.md` and the
 `HASH_GROUP_BY` split in `docs/super-sirius/physical-plan-generation.md` (Part 3).
@@ -19,7 +19,7 @@ as a simpler stand-in; this map covers the real grouping path in full. Read with
 Where the ungrouped aggregate reduces a whole batch to **one** row (`cudf::reduce`, one global
 group), the grouped aggregate buckets rows **by the GROUP BY key** and aggregates per bucket
 via **`cudf::groupby`**. Same two-phase local→merge shape
-([`reference/explainers/aggregation-and-group-by.md`](reference/explainers/aggregation-and-group-by.md)),
+([`reference/explainers/aggregation-and-group-by.md`](../../reference/explainers/aggregation-and-group-by.md)),
 **plus** two things the ungrouped path lacks: a group **key** (`group_idx`) and a
 **`PARTITION`-by-key** step so a given key's partials meet on one node before the merge.
 
@@ -33,7 +33,7 @@ via **`cudf::groupby`**. Same two-phase local→merge shape
 - **`HASH_GROUP_BY`** = `sirius_physical_grouped_aggregate` — local, per-batch (`cudf::groupby`).
 - **`PARTITION`** = engine-injected; hash-partitions partial rows **by group key** so all
   partials for a key land in one partition (the "colocate equal keys" move shared with hash
-  join — [`hash-join-build-probe.md`](reference/explainers/hash-join-build-probe.md)).
+  join — [`hash-join-build-probe.md`](../../reference/explainers/hash-join-build-probe.md)).
 - **`MERGE_GROUP_BY`** = `sirius_physical_grouped_aggregate_merge` — combines a partition's
   partials into the final per-group rows (engine builds it via
   `construct_sirius_specific_operator`).
@@ -81,11 +81,11 @@ all of a key's partials sit in the same partition.
 - **AVG / COUNT(DISTINCT)** are decomposed in Phase 1 (`collect_set`, SUM+COUNT) and only
   *finalized* in Phase 2 — don't expect a finished average out of `HASH_GROUP_BY`.
 - DECIMAL widening + the **BIGINT-SUM CPU fallback** (int128 gap) apply here too
-  ([`reference/explainers/types-duckdb-cudf-sirius.md`](reference/explainers/types-duckdb-cudf-sirius.md)).
+  ([`reference/explainers/types-duckdb-cudf-sirius.md`](../../reference/explainers/types-duckdb-cudf-sirius.md)).
 - **Grouping sets** are carried (`grouping_sets`) but largely **TODO** (commented-out members,
   dead helpers noted at the top of the merge `.cpp`) — multi-set grouping isn't fully wired.
 - **NULL group keys**: `cudf::groupby` is built with `null_policy::INCLUDE` (192), so NULL is
-  its own group ([`reference/explainers/nulls-and-validity.md`](reference/explainers/nulls-and-validity.md)).
+  its own group ([`reference/explainers/nulls-and-validity.md`](../../reference/explainers/nulls-and-validity.md)).
 
 ## Ungrouped vs grouped
 
@@ -111,9 +111,9 @@ all of a key's partials sit in the same partition.
 
 ## See also
 
-- [`file-maps/op/sirius_physical_ungrouped_aggregate.md`](file-maps/op/sirius_physical_ungrouped_aggregate.md)
+- [`file-maps/op/sirius_physical_ungrouped_aggregate.md`](sirius_physical_ungrouped_aggregate.md)
   — the simpler sibling (shared local→merge plumbing).
-- [`reference/explainers/aggregation-and-group-by.md`](reference/explainers/aggregation-and-group-by.md)
-  — the *why*; [`weeks/week2-concepts.md`](weeks/week2-concepts.md) — Step 7 of the trace;
-  [`reference/explainers/hash-join-build-probe.md`](reference/explainers/hash-join-build-probe.md)
+- [`reference/explainers/aggregation-and-group-by.md`](../../reference/explainers/aggregation-and-group-by.md)
+  — the *why*; [`weeks/week2-concepts.md`](../../weeks/week2-concepts.md) — Step 7 of the trace;
+  [`reference/explainers/hash-join-build-probe.md`](../../reference/explainers/hash-join-build-probe.md)
   — the cuco-hash-table / one-partition-per-GPU pattern this shares.

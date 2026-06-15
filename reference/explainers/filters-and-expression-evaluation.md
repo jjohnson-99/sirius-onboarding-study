@@ -97,5 +97,5 @@ cheap, selective predicates first so later ones see fewer rows.
   intermediates) is a big deal on a bandwidth-bound GPU.
 - [`hash-join-build-probe.md`](hash-join-build-probe.md) — join conditions are
   expressions (the `MIXED_JOIN` mode evaluates a cuDF AST predicate); and
-  [`file-maps/op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md)
+  [`file-maps/op/sirius_physical_operator.md`](../../file-maps/op/sirius_physical_operator.md)
   for the FILTER/PROJECTION operators in code.

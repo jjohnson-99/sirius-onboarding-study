@@ -60,7 +60,7 @@ the tree cut at **pipeline breakers** (blocking operators like sorts and hash-jo
 builds). A pipeline is a chain you push one batch through from source to sink without
 stopping; at a breaker the sink *buffers* its whole input (builds a hash table,
 accumulates an aggregate), and a **new** pipeline starts downstream. This is exactly the
-pipeline concept from [`weeks/week1-concepts.md`](weeks/week1-concepts.md) —
+pipeline concept from [`weeks/week1-concepts.md`](../../weeks/week1-concepts.md) —
 push-vs-pull is the mechanism underneath it.
 
 DuckDB: push-based vectorized pipelines with morsel-driven parallelism — each thread
@@ -75,7 +75,7 @@ it. Two regimes:
 (push-through), then `publish_output()` calls the last operator's `sink()`, whose base
 implementation **pushes** each output batch to its downstream ports via
 `push_data_batch` (see
-[`file-maps/op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md)).
+[`file-maps/op/sirius_physical_operator.md`](../../file-maps/op/sirius_physical_operator.md)).
 Straight producer-driven push, just like DuckDB.
 
 **Between pipelines — push into a repository, then *scheduled* pull.** A sink doesn't
@@ -98,7 +98,7 @@ across many GPUs and spill memory under pressure. A pure pull model couldn't exp
 "wait for the entire build side (FULL barrier) before the join runs, but stream
 freely across a PIPELINE barrier" — that readiness logic *is* `get_next_task_hint`, and
 it only makes sense in a push-into-ports world. (See Step 8, task creation, in
-[`weeks/week2-concepts.md`](weeks/week2-concepts.md), and the
+[`weeks/week2-concepts.md`](../../weeks/week2-concepts.md), and the
 morsel-driven-parallelism paper in Weeks 4–5.)
 
 So the one-line answer for Sirius: **push through a pipeline; between pipelines, push
@@ -110,7 +110,7 @@ choice requires.
 
 - [`vectorized-execution.md`](vectorized-execution.md) — the orthogonal axis (batch
   granularity); Sirius is both push-based *and* vectorized.
-- [`weeks/week1-concepts.md`](weeks/week1-concepts.md) — pipelines and
+- [`weeks/week1-concepts.md`](../../weeks/week1-concepts.md) — pipelines and
   pipeline breakers.
-- [`file-maps/op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md)
+- [`file-maps/op/sirius_physical_operator.md`](../../file-maps/op/sirius_physical_operator.md)
   — `sink()`/`push_data_batch`, ports/barriers, and `get_next_task_hint()` in code.

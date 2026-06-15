@@ -44,7 +44,7 @@ pipelines** (repositories).
 
 - **The unit of data flow.** An operator's `operator_data` wraps cuCascade `data_batch`es;
   `execute()` locks them (`read_only_data_batch`), pulls a `cudf::table_view`, runs cuDF, and
-  emits new batches. (See [`file-maps/op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md).)
+  emits new batches. (See [`file-maps/op/sirius_physical_operator.md`](../../file-maps/op/sirius_physical_operator.md).)
 - **The ports between pipelines.** A `shared_data_repository` *is* the port a sink pushes
   into and a downstream task pops from — the buffer in the push-then-scheduled handoff of
   [`push-vs-pull-execution.md`](push-vs-pull-execution.md). It's also where idle intermediates

@@ -13,7 +13,7 @@ relative to the **DuckDB repo root** (github.com/duckdb/duckdb).
 ## Query lifecycle — the skeleton `sirius_interface` forks
 
 The "based on `ClientContext::…`" comments in `sirius_interface.cpp`
-([map](file-maps/sirius_interface.md)) point here:
+([map](../file-maps/sirius_interface.md)) point here:
 
 | DuckDB file | What's there |
 |---|---|
@@ -36,7 +36,7 @@ doorway maps:
 
 ## Logical plans & operators — the plan generator
 
-For [`file-maps/planner/sirius_physical_plan_generator.md`](file-maps/planner/sirius_physical_plan_generator.md):
+For [`file-maps/planner/sirius_physical_plan_generator.md`](../file-maps/planner/sirius_physical_plan_generator.md):
 
 | DuckDB file | What's there |
 |---|---|

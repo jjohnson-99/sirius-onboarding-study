@@ -16,7 +16,7 @@ at specific files and line numbers.
 
 > Note: source/doc paths in this file (e.g. `src/op/...`, `docs/super-sirius/...`)
 > are relative to the **Sirius repo root**. Links to other study notes are relative to
-> this `sirius-onboarding-study` root.
+> the file they're in (normal Markdown relative paths).
 
 **Effort tags:** some files carry a depth tag — *line count is a poor proxy for
 effort, so these signal how hard to lean in:*

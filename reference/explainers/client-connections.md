@@ -5,7 +5,7 @@ knowing which state lives at which level explains a surprising amount, including
 careful save-and-restore dance the transparent path does around DuckDB's optimizer
 (which is what prompted this note). It's the scoping behind `DatabaseInstance`,
 `ClientContext`, `DBConfig`, and `ClientConfig` in the
-[`reference/duckdb-types-glossary.md`](reference/duckdb-types-glossary.md).
+[`reference/duckdb-types-glossary.md`](../duckdb-types-glossary.md).
 
 > **Prime around:** Week 2 (Day 3) — reading `sirius_context` and the transparent
 > hooks; it's the scope model under `DBConfig` / `ClientContext` / `ClientConfig`.
@@ -47,7 +47,7 @@ snapshotted and put back.
 ## The Sirius wrinkle: one shared runtime, serialized
 
 DuckDB allows concurrent connections, but Sirius adds a twist worth knowing
-(see [`file-maps/sirius_context.md`](file-maps/sirius_context.md)): the
+(see [`file-maps/sirius_context.md`](../../file-maps/sirius_context.md)): the
 **same `SiriusContext` instance is registered on every connection** of the database
 (`OnConnectionOpened` installs the shared one), and the GPU query lifecycle is
 **serialized** by `query_lifecycle_mutex_` so two connections can't run GPU queries —
@@ -59,7 +59,7 @@ database-wide config safe.
 ## Worked example: the optimizer disable/restore (your question)
 
 The transparent path
-([`file-maps/transparent/sirius_optimizer_extension.md`](file-maps/transparent/sirius_optimizer_extension.md))
+([`file-maps/transparent/sirius_optimizer_extension.md`](../../file-maps/transparent/sirius_optimizer_extension.md))
 needs DuckDB's optimizer to *not* run a few passes (`IN_CLAUSE`,
 `COMPRESSED_MATERIALIZATION`, `STATISTICS_PROPAGATION`, `LATE_MATERIALIZATION`) that
 produce plan shapes Sirius can't convert. So, for **one query**:
@@ -96,11 +96,11 @@ convertibility; the restore exists purely so the *next* query starts clean.
 
 ## See also
 
-- [`reference/duckdb-types-glossary.md`](reference/duckdb-types-glossary.md) — `DatabaseInstance`,
+- [`reference/duckdb-types-glossary.md`](../duckdb-types-glossary.md) — `DatabaseInstance`,
   `ClientContext`, `DBConfig`, `ClientConfig`.
-- [`file-maps/sirius_context.md`](file-maps/sirius_context.md) — the shared
+- [`file-maps/sirius_context.md`](../../file-maps/sirius_context.md) — the shared
   runtime, `InternalQueryGuard`, and the query-lifecycle serialization.
-- [`file-maps/transparent/sirius_optimizer_extension.md`](file-maps/transparent/sirius_optimizer_extension.md)
+- [`file-maps/transparent/sirius_optimizer_extension.md`](../../file-maps/transparent/sirius_optimizer_extension.md)
   — the hooks in context (and the explicit path's matching `PrepareConnection` /
   `CleanupConnection` save-restore in
-  [`file-maps/sirius_extension.md`](file-maps/sirius_extension.md)).
+  [`file-maps/sirius_extension.md`](../../file-maps/sirius_extension.md)).

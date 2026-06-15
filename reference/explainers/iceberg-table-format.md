@@ -61,7 +61,7 @@ Sirius does it **on the GPU** with no device→host round-trips:
 
 Sirius **prefetches** the delete data before pipeline construction (the
 `prefetch_iceberg_delete_data` step in
-[`file-maps/sirius_engine.md`](file-maps/sirius_engine.md)). So the mental model:
+[`file-maps/sirius_engine.md`](../../file-maps/sirius_engine.md)). So the mental model:
 **Iceberg = Parquet data files + a metadata/delete layer; Sirius reads the Parquet on the
 GPU and applies the Iceberg deletes on the GPU.**
 
@@ -70,5 +70,5 @@ GPU and applies the Iceberg deletes on the GPU.**
 - [`parquet-format.md`](parquet-format.md) — the file format Iceberg's data files use (and
   that the Iceberg scan inherits).
 - [`oltp-vs-olap.md`](oltp-vs-olap.md) — Iceberg is OLAP/data-lake infrastructure;
-  [`file-maps/sirius_engine.md`](file-maps/sirius_engine.md) — where Sirius prefetches
+  [`file-maps/sirius_engine.md`](../../file-maps/sirius_engine.md) — where Sirius prefetches
   Iceberg delete data.

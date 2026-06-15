@@ -1,6 +1,6 @@
 # `op/sirius_physical_operator.cpp` → Base-Interface Map
 
-Companion for Week 2, **Days 4–5** of [`onboarding-path.md`](onboarding-path.md),
+Companion for Week 2, **Days 4–5** of [`onboarding-path.md`](../../onboarding-path.md),
 tagged **read**. Read `src/op/sirius_physical_operator.cpp` (+ the header
 `src/include/op/sirius_physical_operator.hpp`) with the **"Base Class"** section of
 `docs/super-sirius/operators.md` open. Read this **before** the concrete operators —

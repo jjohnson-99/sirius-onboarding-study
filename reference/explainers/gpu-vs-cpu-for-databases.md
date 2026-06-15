@@ -8,7 +8,7 @@ speed is gated by **memory-access patterns**, and columnar is what feeds it.
 
 > **Prime around:** Week 1–2 — foundational background for the whole project; most
 > concrete when you first read an operator's `execute()` calling a `cudf::` kernel
-> ([`file-maps/op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md))
+> ([`file-maps/op/sirius_physical_operator.md`](../../file-maps/op/sirius_physical_operator.md))
 > and the `src/cuda/scan/` decoders.
 
 ## Two different design goals: latency vs. throughput
@@ -102,7 +102,7 @@ Two more GPU-specific costs the design must respect:
   layout is much of what the scan path does.
 - Every operator's `execute()` hands `table_view`s to a cuDF primitive that launches a
   kernel assigning ~one thread per element over those contiguous columns
-  ([`file-maps/op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md)).
+  ([`file-maps/op/sirius_physical_operator.md`](../../file-maps/op/sirius_physical_operator.md)).
 - The parquet **GPU decoders** ([`parquet-format.md`](parquet-format.md)) exist so the
   data lands in coalesce-friendly columnar form on the device without a CPU round-trip.
 - Memory tiers / downgrade exist because GPU memory is small and precious relative to the

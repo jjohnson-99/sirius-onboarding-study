@@ -1,13 +1,13 @@
 # `sirius_interface.cpp` → Execution-Flow Map
 
-Companion for Week 2, Days 1–2 of [`onboarding-path.md`](onboarding-path.md): read
+Companion for Week 2, Days 1–2 of [`onboarding-path.md`](../onboarding-path.md): read
 `src/sirius_interface.cpp` (and its header `src/include/sirius_interface.hpp`) with
 `docs/super-sirius/execution-flow.md` open. Tagged *read* in the plan, so this map
 goes a level deeper than the `sirius_extension` one — it walks the call graph and the
 state machine, not just the function-to-step mapping.
 
 > Source/doc paths (`src/...`, `docs/...`) are relative to the **Sirius repo root**;
-> links to other study notes are relative to this `sirius-onboarding-study` root. Line
+> links to other study notes are relative to this file (normal Markdown relative paths). Line
 > numbers were accurate as of the read on 2026-06-10; re-grep the function name if the
 > file moved.
 
@@ -21,7 +21,7 @@ skeleton into `sirius_interface` and **swapped DuckDB's CPU executor for the Sir
 GPU engine**. So if you know (or skim) how DuckDB's `ClientContext::Query` works, you
 already know the shape of this file — the only real change is *who executes*. (To read
 the real DuckDB methods these are forked from, see
-[`reference/duckdb-source-map.md`](reference/duckdb-source-map.md) → Query lifecycle.)
+[`reference/duckdb-source-map.md`](../reference/duckdb-source-map.md) → Query lifecycle.)
 
 It implements **Step 3 (Query Lifecycle Setup)** and **Step 9 (Result Extraction)**
 of the execution-flow doc. It is the layer between the entry doorways
@@ -148,7 +148,7 @@ something — it isn't, those paths just aren't built out yet:
 
 The recurring DuckDB types here — `ClientContext`, `QueryResult`, `ErrorData`,
 `PreparedStatementData` — are in
-[`duckdb-types-glossary.md`](reference/duckdb-types-glossary.md). The ones that are
+[`duckdb-types-glossary.md`](../reference/duckdb-types-glossary.md). The ones that are
 specifically load-bearing for reading `sirius_interface.cpp`:
 
 - **`sirius_active_query_context`** *(Sirius struct; header line 40)* — the per-query

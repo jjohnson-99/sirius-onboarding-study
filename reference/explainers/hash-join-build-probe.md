@@ -7,7 +7,7 @@ engines. The build/probe split is also the cleanest example of a *pipeline break
 ([`morsel-driven-parallelism.md`](morsel-driven-parallelism.md)), and it's the shape of
 Sirius's most complex operator.
 
-> **Prime around:** Week 1 (the CMU joins lecture / [`weeks/week1-concepts.md`](weeks/week1-concepts.md))
+> **Prime around:** Week 1 (the CMU joins lecture / [`weeks/week1-concepts.md`](../../weeks/week1-concepts.md))
 > for the concept; most useful **entering Week 5**, where `src/op/sirius_physical_hash_join.cpp`
 > is the "study"-tagged operator.
 
@@ -101,7 +101,7 @@ build/probe story here.
 
 ## See also
 
-- [`weeks/week1-concepts.md`](weeks/week1-concepts.md) — hash join in the Week 1
+- [`weeks/week1-concepts.md`](../../weeks/week1-concepts.md) — hash join in the Week 1
   vocabulary (and how Sirius implements it), alongside physical plan / operator /
   pipeline.
 - [`push-vs-pull-execution.md`](push-vs-pull-execution.md) — pipeline breakers and the

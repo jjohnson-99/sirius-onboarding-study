@@ -1,7 +1,7 @@
 # Transparent-Doorway Map — `transparent/sirius_optimizer_extension.cpp` + `physical_sirius_execution.cpp`
 
-Companion for Week 2, **Days 1–2** of [`onboarding-path.md`](onboarding-path.md).
-Read this **right after** [`file-maps/sirius_extension.md`](file-maps/sirius_extension.md): that file
+Companion for Week 2, **Days 1–2** of [`onboarding-path.md`](../../onboarding-path.md).
+Read this **right after** [`file-maps/sirius_extension.md`](../sirius_extension.md): that file
 is the *explicit* doorway (`CALL gpu_execution(...)`); this is the **primary**
 doorway — plain SQL, transparently intercepted. Read
 `src/transparent/sirius_optimizer_extension.cpp` (101 lines) and
@@ -18,12 +18,12 @@ intercept the query *inside DuckDB's own pipeline* and quietly route it to the G
 That interception is what these files do. It's the default; the explicit
 `gpu_execution(...)` table function is "still supported but no longer primary" (the
 "(Legacy)" tag on Step 1b — see the note in
-[`file-maps/sirius_extension.md`](file-maps/sirius_extension.md)).
+[`file-maps/sirius_extension.md`](../sirius_extension.md)).
 
 **The crucial payoff:** this doorway and the explicit one **converge on the exact
 same engine entry point**. Both end up calling
 `sirius_interface::sirius_execute_query(...)`. So everything you mapped from Step 3
-onward ([`file-maps/sirius_interface.md`](file-maps/sirius_interface.md) → engine → operators) is
+onward ([`file-maps/sirius_interface.md`](../sirius_interface.md) → engine → operators) is
 shared by both paths. Only the doorway differs.
 
 ## The transparent path has three pieces
@@ -31,7 +31,7 @@ shared by both paths. Only the doorway differs.
 | Piece | File | Map |
 |---|---|---|
 | 1. Optimizer hooks — capture the optimized logical plan | `transparent/sirius_optimizer_extension.cpp` | **this file** |
-| 2. `OnFinalizePrepare` — swap DuckDB's physical plan for a Sirius one | `sirius_context.cpp` | [`file-maps/sirius_context.md`](file-maps/sirius_context.md) (Role 2) |
+| 2. `OnFinalizePrepare` — swap DuckDB's physical plan for a Sirius one | `sirius_context.cpp` | [`file-maps/sirius_context.md`](../sirius_context.md) (Role 2) |
 | 3. `PhysicalSiriusExecution` — the substituted operator that runs the GPU query | `transparent/physical_sirius_execution.cpp` | **this file** |
 
 They run in that order, hooked into DuckDB's normal query lifecycle. The hooks are
@@ -66,7 +66,7 @@ capturing the plan and swapping in the operator (via `OnFinalizePrepare` in
 `sirius_context.cpp`); the second (`physical_sirius_execution.cpp`) is that operator being
 pulled for data. The `iface->sirius_execute_query` handoff at `:151` is **the convergence
 point** — the explicit `gpu_execution` path reaches the *same* call (see
-[`file-maps/sirius_interface.md`](file-maps/sirius_interface.md) → Call sequence), so from
+[`file-maps/sirius_interface.md`](../sirius_interface.md) → Call sequence), so from
 Step 3 on the two doorways are identical.
 
 ## Piece 1 — the optimizer hooks (Step 1)
@@ -82,17 +82,17 @@ registers two functions:
 
 Both hooks early-out unless `gpu_execution_enabled` **and** the `SiriusContext` is
 initialized **and** it's not an internal query (`is_internal_query_active()` — the
-`InternalQueryGuard` guard you met in [`file-maps/sirius_context.md`](file-maps/sirius_context.md)).
+`InternalQueryGuard` guard you met in [`file-maps/sirius_context.md`](../sirius_context.md)).
 
 > The disable/restore is **per-query** and restored *unconditionally* right after
 > optimization (with a `QueryEnd` backstop) — **not** only on CPU fallback. Note also
 > that `disabled_optimizers` is database-wide `DBConfig` state, not per-connection.
 > Worked through in
-> [`reference/explainers/client-connections.md`](reference/explainers/client-connections.md).
+> [`reference/explainers/client-connections.md`](../../reference/explainers/client-connections.md).
 
 This is the explicit path's `PrepareConnection` optimizer-disabling, relocated into a
 DuckDB hook. Same idea, different trigger — exactly the symmetry noted in
-[`file-maps/sirius_extension.md`](file-maps/sirius_extension.md).
+[`file-maps/sirius_extension.md`](../sirius_extension.md).
 
 ## Piece 2 — `OnFinalizePrepare` (in `sirius_context.cpp`)
 
@@ -101,7 +101,7 @@ Not in these files, but it's the hinge: after DuckDB builds its CPU physical pla
 generator's `create_plan()`** (the single source of truth for GPU support), and — if
 it succeeds — replaces DuckDB's physical plan with a `PhysicalSiriusExecution`. If
 `create_plan()` throws (unsupported op) the CPU plan stays → **silent fallback**.
-Full treatment in [`file-maps/sirius_context.md`](file-maps/sirius_context.md).
+Full treatment in [`file-maps/sirius_context.md`](../sirius_context.md).
 
 ## Piece 3 — `PhysicalSiriusExecution` (Step 2)
 
@@ -131,7 +131,7 @@ CALL gpu_execution(...) ─▶ GPUExecutionBind ─▶ GPUExecutionFunction ─�
 ## Types fundamental to *this* file
 
 Recurring DuckDB types (`ClientContext`, `LogicalOperator`, `DataChunk`,
-`PreparedStatementData`) → [`reference/duckdb-types-glossary.md`](reference/duckdb-types-glossary.md).
+`PreparedStatementData`) → [`reference/duckdb-types-glossary.md`](../../reference/duckdb-types-glossary.md).
 Specific here:
 
 - **`OptimizerExtension` / `OptimizerExtensionInput`** *(DuckDB)* — the hook mechanism
@@ -142,13 +142,13 @@ Specific here:
   result chunks from it. **Think:** "a DuckDB operator whose `GetData` happens to run a
   whole GPU query."
 - **`sirius_interface` / `sirius_prepared_statement_data`** *(Sirius)* — the shared
-  engine entry; detail in [`file-maps/sirius_interface.md`](file-maps/sirius_interface.md). **Think:**
+  engine entry; detail in [`file-maps/sirius_interface.md`](../sirius_interface.md). **Think:**
   the door both paths walk through.
 
 ## Takeaway
 
 This is the production doorway, but it's *thin*: it captures a plan, swaps in an
 operator, and that operator calls `sirius_execute_query`. Because both doorways
-converge there, the rest of Week 2 ([`file-maps/sirius_interface.md`](file-maps/sirius_interface.md)
+converge there, the rest of Week 2 ([`file-maps/sirius_interface.md`](../sirius_interface.md)
 onward) covers both. Synthesis in
-[`weeks/week2-concepts.md`](weeks/week2-concepts.md), Stage 1.
+[`weeks/week2-concepts.md`](../../weeks/week2-concepts.md), Stage 1.

@@ -79,7 +79,7 @@ Running *only* your test (the single-file / by-name forms) keeps the loop fast �
 
 ## See also
 
-- [`onboarding-path.md`](onboarding-path.md) — Week 3 Days 4–5 (the PR task).
+- [`onboarding-path.md`](../../onboarding-path.md) — Week 3 Days 4–5 (the PR task).
 - [`duckdb-extension-api.md`](duckdb-extension-api.md) — `require sirius` loads the extension
   these tests exercise; [`types-duckdb-cudf-sirius.md`](types-duckdb-cudf-sirius.md) /
   [`nulls-and-validity.md`](nulls-and-validity.md) — the kinds of edge cases worth a `.test`.

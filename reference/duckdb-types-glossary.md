@@ -9,7 +9,7 @@ Scope notes:
 - **DuckDB types only.** Sirius-specific types (e.g. `sirius_interface`,
   `sirius_physical_operator`, `SiriusContext`) are documented in the per-file map
   where you first meet them, or — for the ubiquitous ones — in
-  [`week1-concepts.md`](weeks/week1-concepts.md).
+  [`week1-concepts.md`](../weeks/week1-concepts.md).
 - `unique_ptr<T>` / `shared_ptr<T>` are just `std::` ownership wrappers; `string` /
   `vector` are DuckDB aliases for the `std::` versions. Not glossary-worthy.
 - Each entry gives what the type *is* and a **Think:** line for how to hold it

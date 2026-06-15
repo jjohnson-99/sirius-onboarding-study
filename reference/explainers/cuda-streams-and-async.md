@@ -7,7 +7,7 @@ and why pinned memory and `synchronize()` calls show up where they do. It's the 
 companion to [`gpu-warps-and-execution.md`](gpu-warps-and-execution.md).
 
 > **Prime around:** Week 2 — you meet `cuda_stream_view` in every `execute()`
-> ([`file-maps/op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md))
+> ([`file-maps/op/sirius_physical_operator.md`](../../file-maps/op/sirius_physical_operator.md))
 > — then Weeks 5–6, where async host↔device transfers and memory really lean on it.
 
 ## The async model: the GPU is a separate worker you queue work for

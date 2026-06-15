@@ -1,6 +1,6 @@
 # Week 1 Concepts — Physical Plan, Operator, Pipeline, Hash Join
 
-The Week 1 checkpoint in [`onboarding-path.md`](onboarding-path.md):
+The Week 1 checkpoint in [`onboarding-path.md`](../onboarding-path.md):
 
 > Can explain physical plan, operator, pipeline, and hash join in plain language,
 > and roughly how SQL becomes GPU work.

@@ -1,6 +1,6 @@
 # Week 2 Concepts — Tracing One Query End-to-End
 
-The Week 2 checkpoint in [`onboarding-path.md`](onboarding-path.md):
+The Week 2 checkpoint in [`onboarding-path.md`](../onboarding-path.md):
 
 > Can point at the file + function for each stage of a query's life. **Ready for a
 > small contribution.**
@@ -8,7 +8,7 @@ The Week 2 checkpoint in [`onboarding-path.md`](onboarding-path.md):
 This is the synthesis. Week 1 ([`week1-concepts.md`](week1-concepts.md)) gave you the
 vocabulary (physical plan, operator, pipeline, hash join). Week 2 follows **one real
 query through the actual source**. Each stage links to a per-file map in
-[`file-maps`](file-maps) that goes deeper; this doc is the through-line that
+[`file-maps`](../file-maps) that goes deeper; this doc is the through-line that
 connects them, mapped onto `docs/super-sirius/execution-flow.md`.
 
 ## The query
@@ -26,7 +26,7 @@ Eight stages, from SQL string to result. File:function references are the "point
 it" the checkpoint asks for.
 
 ### 1. Doorways — SQL enters Sirius
-**File maps:** [`sirius_extension.md`](file-maps/sirius_extension.md) (Step 0 + explicit), [`transparent/sirius_optimizer_extension.md`](file-maps/transparent/sirius_optimizer_extension.md) (primary) · **doc:** Steps 1 / 1b / 2
+**File maps:** [`sirius_extension.md`](../file-maps/sirius_extension.md) (Step 0 + explicit), [`transparent/sirius_optimizer_extension.md`](../file-maps/transparent/sirius_optimizer_extension.md) (primary) · **doc:** Steps 1 / 1b / 2
 
 First, `LoadInternal` in `sirius_extension.cpp` bootstraps the extension (**Step 0**) —
 registering config, the optimizer hooks, and the `gpu_execution` function. Then there
@@ -48,7 +48,7 @@ thing behind `#ifdef SIRIUS_ENABLE_LEGACY`.) Unsupported queries silently **fall
 back** to DuckDB CPU at the plan-generation step.
 
 ### 2. Translation — logical plan → Sirius physical plan
-**File map:** [`planner/sirius_physical_plan_generator.md`](file-maps/planner/sirius_physical_plan_generator.md) · **doc:** Part 1 of physical-plan-generation
+**File map:** [`planner/sirius_physical_plan_generator.md`](../file-maps/planner/sirius_physical_plan_generator.md) · **doc:** Part 1 of physical-plan-generation
 
 `create_plan()` walks DuckDB's `LogicalOperator` tree through a big `switch`:
 `LOGICAL_GET → TABLE_SCAN`, `LOGICAL_AGGREGATE_AND_GROUP_BY → HASH_GROUP_BY`. Any
@@ -56,7 +56,7 @@ unhandled node throws → fallback. Output: a `sirius_physical_operator` tree (t
 *how-on-GPU* plan).
 
 ### 3. Lifecycle setup — the conductor
-**File map:** [`sirius_interface.md`](file-maps/sirius_interface.md) · **doc:** Step 3
+**File map:** [`sirius_interface.md`](../file-maps/sirius_interface.md) · **doc:** Step 3
 
 `sirius_execute_query` runs DuckDB's two-phase contract (a hand-rolled fork of
 `ClientContext`): the **pending phase** builds a `sirius_engine`, creates the
@@ -65,7 +65,7 @@ RESULT_COLLECTOR sink, and calls `engine.initialize()`; the **execute phase** ca
 `sirius_active_query` member.
 
 ### 4. Build — plan → pipelines
-**File map:** [`sirius_engine.md`](file-maps/sirius_engine.md) · **doc:** Step 4 / plan-gen Parts 2–4
+**File map:** [`sirius_engine.md`](../file-maps/sirius_engine.md) · **doc:** Step 4 / plan-gen Parts 2–4
 
 `engine.initialize_internal()` builds a meta-pipeline tree (each operator's
 `build_pipelines()`), then `sirius_pipeline_converter` splits it: the aggregate becomes
@@ -73,7 +73,7 @@ RESULT_COLLECTOR sink, and calls `engine.initialize()`; the **execute phase** ca
 The result is `new_scheduled` — the runnable pipelines.
 
 ### 5. Ownership — who runs it
-**File map:** [`sirius_context.md`](file-maps/sirius_context.md) · **doc:** architecture-overview (Ownership Hierarchy)
+**File map:** [`sirius_context.md`](../file-maps/sirius_context.md) · **doc:** architecture-overview (Ownership Hierarchy)
 
 `engine.execute()` reaches the `SiriusContext` via
 `registered_state->Get<SiriusContext>("sirius_state")`, calls `create_query(new_scheduled)`,
@@ -82,14 +82,14 @@ subsystem (scheduler, memory manager, scan manager, task creator…) — the roo
 runtime, attached to the DuckDB connection.
 
 ### 6. Source — data enters
-**File maps:** [`op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md) (base), [`op/sirius_physical_duckdb_scan.md`](file-maps/op/sirius_physical_duckdb_scan.md) · **doc:** Step 6
+**File maps:** [`op/sirius_physical_operator.md`](../file-maps/op/sirius_physical_operator.md) (base), [`op/sirius_physical_duckdb_scan.md`](../file-maps/op/sirius_physical_duckdb_scan.md) · **doc:** Step 6
 
 The `DUCKDB_SCAN` source *describes* the `lineitem` scan; the **scan executor** (Week 5)
 actually reads it, batch by batch, onto the GPU, setting `exhausted` when done. Each
 batch is a `pipelineable_operator_data` wrapping a `cudf::table`.
 
 ### 7. Compute — the GPU does the work
-**File maps:** [`op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md), [`op/sirius_physical_limit.md`](file-maps/op/sirius_physical_limit.md) (the `execute()` template), [`op/sirius_physical_ungrouped_aggregate.md`](file-maps/op/sirius_physical_ungrouped_aggregate.md) (the simpler sibling you read), [`op/sirius_physical_grouped_aggregate.md`](file-maps/op/sirius_physical_grouped_aggregate.md) (**what this query uses**) · **doc:** Steps 7–8
+**File maps:** [`op/sirius_physical_operator.md`](../file-maps/op/sirius_physical_operator.md), [`op/sirius_physical_limit.md`](../file-maps/op/sirius_physical_limit.md) (the `execute()` template), [`op/sirius_physical_ungrouped_aggregate.md`](../file-maps/op/sirius_physical_ungrouped_aggregate.md) (the simpler sibling you read), [`op/sirius_physical_grouped_aggregate.md`](../file-maps/op/sirius_physical_grouped_aggregate.md) (**what this query uses**) · **doc:** Steps 7–8
 
 The GPU pipeline executor calls each operator's `execute()` on a CUDA stream. Our query has a
 `GROUP BY`, so its aggregate is the **grouped** path — a three-operator chain
@@ -106,14 +106,14 @@ So `SUM(l_quantity)` *per group* is computed by `cudf::groupby` (local) then fin
 merge. ⚠️ The **ungrouped** operator you read closely (`cudf::reduce`, **one global group, no
 `PARTITION`**) is the simpler *no-`GROUP BY`* sibling — same two-phase local→merge plumbing,
 minus the grouping. You learned the plumbing there; the grouped operator adds `cudf::groupby`
-+ partition-by-key (see its [map](file-maps/op/sirius_physical_grouped_aggregate.md) and
-the [aggregation explainer](reference/explainers/aggregation-and-group-by.md)).
++ partition-by-key (see its [map](../file-maps/op/sirius_physical_grouped_aggregate.md) and
+the [aggregation explainer](../reference/explainers/aggregation-and-group-by.md)).
 
 The task creator (Week 4) keeps scheduling downstream operators via the
 `get_next_task_hint()` port/barrier logic in the base operator.
 
 ### 8. Result — back to DuckDB
-**File map:** [`sirius_interface.md`](file-maps/sirius_interface.md) · **doc:** Step 9
+**File map:** [`sirius_interface.md`](../file-maps/sirius_interface.md) · **doc:** Step 9
 
 The final RESULT_COLLECTOR pipeline completes; the future resolves;
 `engine.get_result()` pulls the materialized `ColumnDataCollection`;
@@ -121,7 +121,7 @@ The final RESULT_COLLECTOR pipeline completes; the future resolves;
 hands the rows to the client.
 
 > For the **code-level** version of this trace — the four orchestration maps' call-sequence
-> trees stitched into one spine — see [`file-maps/README.md`](file-maps/README.md).
+> trees stitched into one spine — see [`file-maps/README.md`](../file-maps/README.md).
 
 ## The one-screen mental model
 

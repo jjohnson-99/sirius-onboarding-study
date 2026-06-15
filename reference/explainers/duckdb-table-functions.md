@@ -2,9 +2,9 @@
 
 "Table function" is one of those DuckDB terms that's obvious once it clicks and
 confusing until then. It comes straight out of the
-[`reference/duckdb-types-glossary.md`](reference/duckdb-types-glossary.md) bind→execute entries, and
+[`reference/duckdb-types-glossary.md`](../duckdb-types-glossary.md) bind→execute entries, and
 it's the structural backbone of `sirius_extension.cpp`
-([file-map](file-maps/sirius_extension.md)). Let's unpack it.
+([file-map](../../file-maps/sirius_extension.md)). Let's unpack it.
 
 > **Prime around:** Week 2 (Days 1–2) — `sirius_extension.cpp` is wall-to-wall
 > bind/execute pairs.
@@ -108,7 +108,7 @@ TableFunction("gpu_execution", {LogicalType::VARCHAR}, GPUExecutionFunction, GPU
 
 ## Tie-back to the glossary types
 
-The four [`reference/duckdb-types-glossary.md`](reference/duckdb-types-glossary.md) types are exactly
+The four [`reference/duckdb-types-glossary.md`](../duckdb-types-glossary.md) types are exactly
 the actors in this contract:
 
 ```

@@ -6,13 +6,13 @@ the execution engine. That representation is a **plan IR** (intermediate represe
 plan directly rather than Substrait — but the concept explains the plan generator, and the
 repo still vendors a `substrait` submodule, so it's worth knowing the distinction.
 
-> **Prime around:** Week 2 — context for [`file-maps/planner/sirius_physical_plan_generator.md`](file-maps/planner/sirius_physical_plan_generator.md)
+> **Prime around:** Week 2 — context for [`file-maps/planner/sirius_physical_plan_generator.md`](../../file-maps/planner/sirius_physical_plan_generator.md)
 > (why Sirius translates DuckDB plans the way it does); also ecosystem orientation with
 > [`rapids-gpu-data-ecosystem.md`](rapids-gpu-data-ecosystem.md).
 
 ## What a plan IR is
 
-Recall the pipeline (from [`weeks/week1-concepts.md`](weeks/week1-concepts.md)): SQL → parse →
+Recall the pipeline (from [`weeks/week1-concepts.md`](../../weeks/week1-concepts.md)): SQL → parse →
 **logical plan** → optimize → **physical plan** → execute. A **plan IR** is the engine-neutral
 representation of the plan that sits *between* the front end and the back end. Two flavors:
 
@@ -70,8 +70,8 @@ submodule exists without being central.
 
 ## See also
 
-- [`file-maps/planner/sirius_physical_plan_generator.md`](file-maps/planner/sirius_physical_plan_generator.md)
+- [`file-maps/planner/sirius_physical_plan_generator.md`](../../file-maps/planner/sirius_physical_plan_generator.md)
   — the direct `LogicalOperator` → `sirius_physical_operator` translation.
 - [`rapids-gpu-data-ecosystem.md`](rapids-gpu-data-ecosystem.md) — composable data systems,
-  where portable plan IRs (Substrait) fit; [`reference/duckdb-types-glossary.md`](reference/duckdb-types-glossary.md)
+  where portable plan IRs (Substrait) fit; [`reference/duckdb-types-glossary.md`](../duckdb-types-glossary.md)
   — `LogicalOperator` (DuckDB's in-memory IR).

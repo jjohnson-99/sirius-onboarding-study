@@ -20,7 +20,7 @@ libcudf provides two things:
 1. **GPU columnar data structures** — `cudf::column` (a contiguous typed device array +
    null mask), `cudf::table` (a set of columns), and non-owning `column_view` /
    `table_view`. These are the types in every Sirius `execute()` and in the
-   [`duckdb-types-glossary.md`](reference/duckdb-types-glossary.md)'s neighborhood. Arrow-style
+   [`duckdb-types-glossary.md`](../duckdb-types-glossary.md)'s neighborhood. Arrow-style
    columnar layout ([`columnar-vs-row-storage.md`](columnar-vs-row-storage.md)), allocated
    via RMM ([`gpu-memory-and-spilling.md`](gpu-memory-and-spilling.md)), run on CUDA streams
    ([`cuda-streams-and-async.md`](cuda-streams-and-async.md)).
@@ -53,7 +53,7 @@ the `rmm::cuda_stream_view` + allocator threaded through Sirius operators.
 
 ## See also
 
-- [`file-maps/op/sirius_physical_operator.md`](file-maps/op/sirius_physical_operator.md) —
+- [`file-maps/op/sirius_physical_operator.md`](../../file-maps/op/sirius_physical_operator.md) —
   where `execute()` calls cuDF; and the operator maps for the concrete calls.
 - [`columnar-vs-row-storage.md`](columnar-vs-row-storage.md) — the columnar layout cuDF
   embodies; [`gpu-warps-and-execution.md`](gpu-warps-and-execution.md) — what runs inside a

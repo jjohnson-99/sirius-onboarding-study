@@ -6,7 +6,7 @@ you do it on parallel hardware shapes a lot of the engine, and it's the operatio
 closes the Week 2 trace.
 
 > **Prime around:** Week 2 — the aggregate is the "closes the loop" operator
-> ([`file-maps/op/sirius_physical_ungrouped_aggregate.md`](file-maps/op/sirius_physical_ungrouped_aggregate.md)).
+> ([`file-maps/op/sirius_physical_ungrouped_aggregate.md`](../../file-maps/op/sirius_physical_ungrouped_aggregate.md)).
 > The grouped variant + merge split deepens in Weeks 4–5.
 
 ## Two flavors
@@ -84,7 +84,7 @@ Not everything combines the same way (the data-cube taxonomy):
 **`AVG` is the canonical algebraic case:** you can't average averages. So it's decomposed
 into `SUM` + `COUNT` (both distributive), those are merged separately, and the division
 happens at the very end. That decomposition is precisely what the
-[`ungrouped-aggregate file-map`](file-maps/op/sirius_physical_ungrouped_aggregate.md)
+[`ungrouped-aggregate file-map`](../../file-maps/op/sirius_physical_ungrouped_aggregate.md)
 shows in code. `COUNT(DISTINCT)` is holistic — Sirius handles it specially (a
 `COLLECT_SET` aggregation, then counting uniques) rather than a simple combine.
 
@@ -115,9 +115,9 @@ fully parallel.
 
 ## See also
 
-- [`file-maps/op/sirius_physical_ungrouped_aggregate.md`](file-maps/op/sirius_physical_ungrouped_aggregate.md)
+- [`file-maps/op/sirius_physical_ungrouped_aggregate.md`](../../file-maps/op/sirius_physical_ungrouped_aggregate.md)
   — the two-phase aggregate in code (the *how* to this *why*).
-- [`weeks/week2-concepts.md`](weeks/week2-concepts.md) — where the aggregate closes the
+- [`weeks/week2-concepts.md`](../../weeks/week2-concepts.md) — where the aggregate closes the
   end-to-end trace.
 - [`hash-join-build-probe.md`](hash-join-build-probe.md) — the hashing/partitioning this
   shares; [`morsel-driven-parallelism.md`](morsel-driven-parallelism.md) — the combinable

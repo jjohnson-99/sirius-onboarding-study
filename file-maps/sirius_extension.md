@@ -1,11 +1,11 @@
 # `sirius_extension.cpp` → Execution-Flow Map
 
-Companion for Week 2, Days 1–2 of [`onboarding-path.md`](onboarding-path.md): read
+Companion for Week 2, Days 1–2 of [`onboarding-path.md`](../onboarding-path.md): read
 `src/sirius_extension.cpp` with `docs/super-sirius/execution-flow.md` open, and use
 this to place each function against the doc's numbered steps.
 
 > Source/doc paths (`src/...`, `docs/...`) are relative to the **Sirius repo root**;
-> links to other study notes are relative to this `sirius-onboarding-study` root. Line
+> links to other study notes are relative to this file (normal Markdown relative paths). Line
 > numbers were accurate as of the read on 2026-06-10 — if the file has changed since,
 > re-confirm with a quick grep for the function name.
 
@@ -30,7 +30,7 @@ next file.
 > out by default. So: this file is fully live. We read the explicit path **first**
 > because it's the cleanest linear trace of "SQL → engine"; the **primary** doorway
 > (plain SQL, transparently intercepted) is
-> [`transparent/sirius_optimizer_extension.md`](file-maps/transparent/sirius_optimizer_extension.md),
+> [`transparent/sirius_optimizer_extension.md`](transparent/sirius_optimizer_extension.md),
 > read right after this. Both converge on `sirius_interface`.
 
 ## Call sequence
@@ -65,7 +65,7 @@ The `load` block is a one-time **fan-out** — it *registers* everything, includ
 transparent hooks, so `LoadInternal` enables *both* doorways (not a control-flow chain;
 shown for orientation). The `explicit gpu_execution` block is the only real chain here, and
 its `sirius_execute_query` at `:612` is the **same convergence point** as the transparent
-path ([`file-maps/transparent/sirius_optimizer_extension.md`](file-maps/transparent/sirius_optimizer_extension.md)
+path ([`file-maps/transparent/sirius_optimizer_extension.md`](transparent/sirius_optimizer_extension.md)
 → Call sequence). Any plan/execution error falls back to DuckDB CPU.
 
 ## Step 0 — Extension load (runs once at `LOAD`, before any query)
@@ -127,7 +127,7 @@ The generic DuckDB types in these signatures — `ClientContext`, `DataChunk`,
 `LogicalType`, `LogicalOperator`, `QueryResult`, `Connection`, `DatabaseInstance`,
 `DBConfig`, `TableFunctionBindInput`, `FunctionData`, `TableFunctionInput` — recur
 everywhere and are defined once in
-[`duckdb-types-glossary.md`](reference/duckdb-types-glossary.md). Read that first; you'll know
+[`duckdb-types-glossary.md`](../reference/duckdb-types-glossary.md). Read that first; you'll know
 them intimately within a week and won't need them re-explained per file.
 
 What's left below is the short list of types that are *especially* load-bearing for
