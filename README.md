@@ -13,7 +13,8 @@ sirius-onboarding-study/
 ├── onboarding-coverage-estimate.md
 ├── weeks/                        one concepts explainer per onboarding week
 │   ├── week1-concepts.md
-│   └── week2-concepts.md
+│   ├── week2-concepts.md
+│   └── week3-concepts.md
 ├── reference/                    shared references the per-file maps link to
 │   ├── duckdb-types-glossary.md
 │   └── explainers/               long-form background concepts (one topic per file)
@@ -54,12 +55,17 @@ sirius-onboarding-study/
     │   └── sirius_optimizer_extension.md  ↔ src/transparent/{sirius_optimizer_extension,physical_sirius_execution}.cpp
     ├── planner/
     │   └── sirius_physical_plan_generator.md  ↔ src/planner/...plan_generator.cpp
+    ├── expression_executor/
+    │   ├── gpu_expression_executor.md     ↔ src/expression_executor/gpu_expression_executor.cpp (+ specializations/)
+    │   └── gpu_expression_translator.md   ↔ src/expression_executor/gpu_expression_translator.cpp
     └── op/
         ├── sirius_physical_operator.md            ↔ src/op/sirius_physical_operator.cpp
         ├── sirius_physical_limit.md               ↔ src/op/sirius_physical_limit.cpp
         ├── sirius_physical_duckdb_scan.md         ↔ src/op/sirius_physical_duckdb_scan.cpp
         ├── sirius_physical_ungrouped_aggregate.md ↔ src/op/sirius_physical_ungrouped_aggregate.cpp
-        └── sirius_physical_grouped_aggregate.md   ↔ src/op/sirius_physical_grouped_aggregate.cpp
+        ├── sirius_physical_grouped_aggregate.md   ↔ src/op/sirius_physical_grouped_aggregate.cpp
+        ├── sirius_physical_top_n.md               ↔ src/op/sirius_physical_top_n.cpp (+ _merge)
+        └── sirius_physical_partition.md           ↔ src/op/sirius_physical_partition.cpp
 ```
 
 `file-maps/` mirrors the repo's `src/` tree: a source file at `src/<path>/<name>.cpp`
@@ -75,6 +81,7 @@ as we work through [`onboarding-path.md`](onboarding-path.md); not all exist yet
 | [onboarding-coverage-estimate.md](onboarding-coverage-estimate.md) | How much of the codebase the plan actually has you read — tiered line/percentage estimate (the "spine + deep dives" rationale). |
 | [weeks/week1-concepts.md](weeks/week1-concepts.md) | Week 1 checkpoint explainer: physical plan, operator, pipeline, hash join, and how SQL becomes GPU work — cross-referenced to the Week 1 readings. |
 | [weeks/week2-concepts.md](weeks/week2-concepts.md) | Week 2 synthesis: the target query traced end-to-end through 8 stages, tying together every Week 2 file-map and mapped onto `execution-flow.md`. |
+| [weeks/week3-concepts.md](weeks/week3-concepts.md) | Week 3 synthesis: turning *downward* from the spine into the operator + expression layer — the "tree of AST trees" expression executor, a medium operator (TOP-N / PARTITION), and the first-PR workflow. |
 | [reference/duckdb-types-glossary.md](reference/duckdb-types-glossary.md) | Shared reference for the recurring DuckDB types (`ClientContext`, `DataChunk`, `LogicalOperator`, …). Per-file maps link here instead of re-explaining. |
 | [reference/duckdb-source-map.md](reference/duckdb-source-map.md) | Pointers into **DuckDB's own source** (not in this repo) for the internals our notes reference — query lifecycle, extension API, logical plans, core types, optimizer. Read at Sirius's pinned commit. |
 | [reference/explainers/](reference/explainers/README.md) | Long-form background concepts intuitive to DB folks but not assumed of the reader — OLTP vs. OLAP, columnar vs. row storage, vectorized execution, GPU vs. CPU (+ warps/execution model, CUDA streams/async, memory & spilling), cuDF, cuCascade, RMM, RAPIDS ecosystem, filters & expression evaluation, types (DuckDB↔cuDF↔Sirius), NULLs & validity, testing, push vs. pull, DuckDB extension API, Substrait & plan IRs, table functions, client connections & config scope, aggregation & GROUP BY, morsel-driven parallelism, hash join build/probe, sorting & ORDER BY, Parquet, Iceberg, MVCC. One topic per file, each tagged with the onboarding week to **prime around** — and arranged into a "why GPU-native SQL" reading thread (see its README). |
@@ -90,6 +97,10 @@ as we work through [`onboarding-path.md`](onboarding-path.md); not all exist yet
 | [file-maps/op/sirius_physical_duckdb_scan.md](file-maps/op/sirius_physical_duckdb_scan.md) | `src/op/sirius_physical_duckdb_scan.cpp` (tiny): the `DUCKDB_SCAN` source — a scan *descriptor*; execution lives in the scan executor. |
 | [file-maps/op/sirius_physical_ungrouped_aggregate.md](file-maps/op/sirius_physical_ungrouped_aggregate.md) | `src/op/sirius_physical_ungrouped_aggregate.cpp`: the two-phase local→merge aggregate (`cudf::reduce`); closes the Week 2 trace. |
 | [file-maps/op/sirius_physical_grouped_aggregate.md](file-maps/op/sirius_physical_grouped_aggregate.md) | `src/op/sirius_physical_grouped_aggregate.cpp` (+ merge): the actual `GROUP BY` operator (`cudf::groupby`) — where the Week 2 query's grouping happens; `HASH_GROUP_BY → PARTITION → MERGE_GROUP_BY`. |
+| [file-maps/expression_executor/gpu_expression_executor.md](file-maps/expression_executor/gpu_expression_executor.md) | `src/expression_executor/gpu_expression_executor.cpp` (+ `specializations/`): how FILTER/PROJECTION evaluate expressions on the GPU — the "tree of AST trees," strategies, `min_ast_size`, and the in-progress Sirius-AST migration. |
+| [file-maps/expression_executor/gpu_expression_translator.md](file-maps/expression_executor/gpu_expression_translator.md) | `src/expression_executor/gpu_expression_translator.cpp`: the *separate* DuckDB→cuDF AST translator (all-or-nothing, for mixed/inequality joins) — evaluate-here vs. translate-and-hand-off. |
+| [file-maps/op/sirius_physical_top_n.md](file-maps/op/sirius_physical_top_n.md) | `src/op/sirius_physical_top_n.cpp` (+ `_merge`): the Day-3 medium operator — two-phase local→merge TOP-N, and per-case cuDF primitive selection (`top_k_order` vs. full-sort fallback). |
+| [file-maps/op/sirius_physical_partition.md](file-maps/op/sirius_physical_partition.md) | `src/op/sirius_physical_partition.cpp`: the harder Day-3 alternative — hash fan-out feeding joins/group-bys; derives keys from the parent op, sizes `N`, coordinates a build/probe sibling pair. A Week 4–5 on-ramp. |
 
 ## Notes
 

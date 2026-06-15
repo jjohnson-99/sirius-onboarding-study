@@ -54,7 +54,8 @@ For the *conceptual* version of the same trace (operators, scan, result included
 | **Engine** | [sirius_engine](sirius_engine.md) |
 | **Ownership** | [sirius_context](sirius_context.md) |
 | **Plan** | [planner/sirius_physical_plan_generator](planner/sirius_physical_plan_generator.md) |
-| **Operators** | [op/sirius_physical_operator](op/sirius_physical_operator.md) (base), [limit](op/sirius_physical_limit.md), [duckdb_scan](op/sirius_physical_duckdb_scan.md), [ungrouped_aggregate](op/sirius_physical_ungrouped_aggregate.md), [grouped_aggregate](op/sirius_physical_grouped_aggregate.md) |
+| **Operators** | [op/sirius_physical_operator](op/sirius_physical_operator.md) (base), [limit](op/sirius_physical_limit.md), [duckdb_scan](op/sirius_physical_duckdb_scan.md), [ungrouped_aggregate](op/sirius_physical_ungrouped_aggregate.md), [grouped_aggregate](op/sirius_physical_grouped_aggregate.md), [top_n](op/sirius_physical_top_n.md), [partition](op/sirius_physical_partition.md) |
+| **Expressions** | [expression_executor/gpu_expression_executor](expression_executor/gpu_expression_executor.md) (FILTER/PROJECTION compute), [expression_executor/gpu_expression_translator](expression_executor/gpu_expression_translator.md) (mixed-join AST) |
 
 Full one-line descriptions: the [top-level README](README.md). Which maps carry a call
 sequence (orchestration files only) is per the rule in the methodology notes.
