@@ -164,8 +164,12 @@ flows between pipelines without races.
         `src/include/memory/sirius_memory_reservation_manager.hpp` — *read closely*;
         reservations and tiering are easy to get subtly wrong
   - [ ] `src/downgrade/` — *read*; GPU→host→disk spilling via cuCascade
-  - [ ] `src/fallback.cpp` — *read* — + `docs/super-sirius/dynamic-filters.md`,
-        `docs/super-sirius/optimizations.md`
+  - [ ] CPU fallback — *read* — + `docs/super-sirius/dynamic-filters.md`,
+        `docs/super-sirius/optimizations.md`. **Note:** the live Super Sirius fallback is
+        `run_internal_cpu_fallback_query` in `src/sirius_extension.cpp` plus per-operator
+        `NotImplementedException` rejects — *not* `src/fallback.cpp` (that path is the
+        legacy `gpu_processing` `FallbackChecker` under `src/legacy/`). See the
+        [fallback file-map](file-maps/fallback.md).
   - [ ] Skim `docs/super-sirius/multi-gpu-architecture.md` (read deeply only if your
         work touches it)
   - [ ] GPU slice: skim libcudf C++ dev guide + relevant

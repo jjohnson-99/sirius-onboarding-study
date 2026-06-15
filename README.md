@@ -14,7 +14,9 @@ sirius-onboarding-study/
 ├── weeks/                        one concepts explainer per onboarding week
 │   ├── week1-concepts.md
 │   ├── week2-concepts.md
-│   └── week3-concepts.md
+│   ├── week3-concepts.md
+│   ├── week4-5-concepts.md
+│   └── week6-7-concepts.md
 ├── reference/                    shared references the per-file maps link to
 │   ├── duckdb-types-glossary.md
 │   └── explainers/               long-form background concepts (one topic per file)
@@ -51,6 +53,7 @@ sirius-onboarding-study/
     ├── sirius_interface.md        ↔ src/sirius_interface.cpp
     ├── sirius_engine.md           ↔ src/sirius_engine.cpp
     ├── sirius_context.md          ↔ src/sirius_context.{hpp,cpp}
+    ├── fallback.md                ↔ CPU-fallback mechanism (live path is in sirius_extension.cpp; plan's src/fallback.cpp is legacy)
     ├── transparent/
     │   └── sirius_optimizer_extension.md  ↔ src/transparent/{sirius_optimizer_extension,physical_sirius_execution}.cpp
     ├── planner/
@@ -58,6 +61,15 @@ sirius-onboarding-study/
     ├── expression_executor/
     │   ├── gpu_expression_executor.md     ↔ src/expression_executor/gpu_expression_executor.cpp (+ specializations/)
     │   └── gpu_expression_translator.md   ↔ src/expression_executor/gpu_expression_translator.cpp
+    ├── pipeline/
+    │   ├── task_scheduler.md              ↔ src/pipeline/task_scheduler.cpp (concurrency core)
+    │   └── gpu_pipeline_executor.md       ↔ src/pipeline/gpu_pipeline_executor.cpp (per-GPU executor)
+    ├── creator/
+    │   └── task_creator.md                ↔ src/creator/task_creator.cpp (what runs next)
+    ├── memory/
+    │   └── sirius_memory_reservation_manager.md   ↔ src/memory/sirius_memory_reservation_manager.cpp (+ defragmenter)
+    ├── downgrade/
+    │   └── downgrade_executor.md          ↔ src/downgrade/downgrade_executor.cpp (spilling)
     └── op/
         ├── sirius_physical_operator.md            ↔ src/op/sirius_physical_operator.cpp
         ├── sirius_physical_limit.md               ↔ src/op/sirius_physical_limit.cpp
@@ -65,7 +77,10 @@ sirius-onboarding-study/
         ├── sirius_physical_ungrouped_aggregate.md ↔ src/op/sirius_physical_ungrouped_aggregate.cpp
         ├── sirius_physical_grouped_aggregate.md   ↔ src/op/sirius_physical_grouped_aggregate.cpp
         ├── sirius_physical_top_n.md               ↔ src/op/sirius_physical_top_n.cpp (+ _merge)
-        └── sirius_physical_partition.md           ↔ src/op/sirius_physical_partition.cpp
+        ├── sirius_physical_partition.md           ↔ src/op/sirius_physical_partition.cpp
+        ├── sirius_physical_hash_join.md           ↔ src/op/sirius_physical_hash_join.cpp (the hard one)
+        └── scan/
+            └── duckdb_scan_executor.md            ↔ src/op/scan/duckdb_scan_executor.cpp (scan subsystem)
 ```
 
 `file-maps/` mirrors the repo's `src/` tree: a source file at `src/<path>/<name>.cpp`
@@ -82,6 +97,8 @@ as we work through [`onboarding-path.md`](onboarding-path.md); not all exist yet
 | [weeks/week1-concepts.md](weeks/week1-concepts.md) | Week 1 checkpoint explainer: physical plan, operator, pipeline, hash join, and how SQL becomes GPU work — cross-referenced to the Week 1 readings. |
 | [weeks/week2-concepts.md](weeks/week2-concepts.md) | Week 2 synthesis: the target query traced end-to-end through 8 stages, tying together every Week 2 file-map and mapped onto `execution-flow.md`. |
 | [weeks/week3-concepts.md](weeks/week3-concepts.md) | Week 3 synthesis: turning *downward* from the spine into the operator + expression layer — the "tree of AST trees" expression executor, a medium operator (TOP-N / PARTITION), and the first-PR workflow. |
+| [weeks/week4-5-concepts.md](weeks/week4-5-concepts.md) | Weeks 4–5 synthesis: the concurrency core traced through a *join* query — the three scheduler roles (creator/scheduler/executor), cross-pipeline data flow (batches/repos/ports/barriers), the scan source, and the three-mode hash join. |
+| [weeks/week6-7-concepts.md](weeks/week6-7-concepts.md) | Weeks 6–7 synthesis: memory & graceful degradation traced through "what if a task needs more GPU than is free?" — tiers/reservations, defrag→spill→OOM-retry, CPU fallback (with the path correction), multi-GPU skim, and the Week-7 contribution workflow. |
 | [reference/duckdb-types-glossary.md](reference/duckdb-types-glossary.md) | Shared reference for the recurring DuckDB types (`ClientContext`, `DataChunk`, `LogicalOperator`, …). Per-file maps link here instead of re-explaining. |
 | [reference/duckdb-source-map.md](reference/duckdb-source-map.md) | Pointers into **DuckDB's own source** (not in this repo) for the internals our notes reference — query lifecycle, extension API, logical plans, core types, optimizer. Read at Sirius's pinned commit. |
 | [reference/explainers/](reference/explainers/README.md) | Long-form background concepts intuitive to DB folks but not assumed of the reader — OLTP vs. OLAP, columnar vs. row storage, vectorized execution, GPU vs. CPU (+ warps/execution model, CUDA streams/async, memory & spilling), cuDF, cuCascade, RMM, RAPIDS ecosystem, filters & expression evaluation, types (DuckDB↔cuDF↔Sirius), NULLs & validity, testing, push vs. pull, DuckDB extension API, Substrait & plan IRs, table functions, client connections & config scope, aggregation & GROUP BY, morsel-driven parallelism, hash join build/probe, sorting & ORDER BY, Parquet, Iceberg, MVCC. One topic per file, each tagged with the onboarding week to **prime around** — and arranged into a "why GPU-native SQL" reading thread (see its README). |
@@ -101,6 +118,14 @@ as we work through [`onboarding-path.md`](onboarding-path.md); not all exist yet
 | [file-maps/expression_executor/gpu_expression_translator.md](file-maps/expression_executor/gpu_expression_translator.md) | `src/expression_executor/gpu_expression_translator.cpp`: the *separate* DuckDB→cuDF AST translator (all-or-nothing, for mixed/inequality joins) — evaluate-here vs. translate-and-hand-off. |
 | [file-maps/op/sirius_physical_top_n.md](file-maps/op/sirius_physical_top_n.md) | `src/op/sirius_physical_top_n.cpp` (+ `_merge`): the Day-3 medium operator — two-phase local→merge TOP-N, and per-case cuDF primitive selection (`top_k_order` vs. full-sort fallback). |
 | [file-maps/op/sirius_physical_partition.md](file-maps/op/sirius_physical_partition.md) | `src/op/sirius_physical_partition.cpp`: the harder Day-3 alternative — hash fan-out feeding joins/group-bys; derives keys from the parent op, sizes `N`, coordinates a build/probe sibling pair. A Week 4–5 on-ramp. |
+| [file-maps/pipeline/task_scheduler.md](file-maps/pipeline/task_scheduler.md) | `src/pipeline/task_scheduler.cpp` (Week 4, *study*): the concurrency core — a pull-signal matcher routing tasks to ready GPUs by device preference; owns the sub-executors. Flags the doc-vs-code RR-counter drift. |
+| [file-maps/pipeline/gpu_pipeline_executor.md](file-maps/pipeline/gpu_pipeline_executor.md) | `src/pipeline/gpu_pipeline_executor.cpp` (Week 4, *study*): one per GPU — reserve→pop→dispatch loop, the per-task-device colocation contract, and OOM-as-resumable-retry. |
+| [file-maps/creator/task_creator.md](file-maps/creator/task_creator.md) | `src/creator/task_creator.cpp` (Week 4, *read closely*): decides *what* runs next via the hint-chain recursion; builds scan vs. GPU pipeline tasks. The operator overrides carry the real logic. |
+| [file-maps/op/scan/duckdb_scan_executor.md](file-maps/op/scan/duckdb_scan_executor.md) | `src/op/scan/duckdb_scan_executor.cpp` (Week 5, *read*): the host-I/O scan executor — column-builder scan tasks, a four-level result cache, memory-proportional multi-GPU targeting. |
+| [file-maps/op/sirius_physical_hash_join.md](file-maps/op/sirius_physical_hash_join.md) | `src/op/sirius_physical_hash_join.cpp` (Week 5, *study*): the hardest operator — three execution modes (STANDARD / BUILD_PROBE / MIXED_JOIN), the build/probe state machine, key casts, join-type side-swapping. |
+| [file-maps/memory/sirius_memory_reservation_manager.md](file-maps/memory/sirius_memory_reservation_manager.md) | `src/memory/sirius_memory_reservation_manager.cpp` (Week 6, *read closely*): the thin cuCascade bridge — three memory tiers, reserve-before-run, the defragmenter OOM policy. Honest: the real machinery is cuCascade's. |
+| [file-maps/downgrade/downgrade_executor.md](file-maps/downgrade/downgrade_executor.md) | `src/downgrade/downgrade_executor.cpp` (Week 6, *read*): predicate-bounded GPU→host→disk spilling — tiered candidate fetch (repos then task queue), a monitor thread, the "free just enough" loop. |
+| [file-maps/fallback.md](file-maps/fallback.md) | CPU-fallback *mechanism* (Week 6, *read*): the live whole-query replay (`run_internal_cpu_fallback_query`) + per-operator `NotImplementedException` rejects, with the S3 caveat. **Corrects the plan's stale `src/fallback.cpp` (legacy) pointer.** |
 
 ## Notes
 

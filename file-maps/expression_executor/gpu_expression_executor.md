@@ -138,28 +138,38 @@ The allow-lists that decide "AST or breaker" live in
 `supported_ast_cast_types` (UBIGINT, BIGINT, DOUBLE) and `supported_ast_functions`
 (add, sub, mul, div, int_div, mod). Anything outside → materialize.
 
-## The Sirius-AST migration (read this so the dual surface isn't confusing)
+## The Sirius-AST migration — now complete (updated for pull `d9172de6`, 2026-06-15)
 
-You'll see two parallel worlds in the header and `.cpp`:
-- the **DuckDB-typed** path: ctors taking `duckdb::Expression` / `sirius::expression`,
-  the `_expressions` member, `execute(duckdb::Expression const&, mode)` (378), and 9
-  per-class overloads (header 421–431).
-- a **Sirius-AST** path: ctor taking `sirius::ast::node const*` (cpp 205), the
-  `_ast_expressions` member, `execute(sirius::ast::node const&, mode)` (516, a
-  `std::visit` over the node's 11 alternatives), and 11 per-alternative overloads
-  (header 435–449).
+> **This section described an in-progress dual surface; that migration has since landed**
+> (`#701/#870`, `#703/#880`; full diff in
+> [`../../reports/post-pull-review-2026-06-15.md`](../../reports/post-pull-review-2026-06-15.md)).
+> The earlier study text below is kept only as history.
 
-This is an in-progress migration ([sirius-db/sirius#699](https://github.com/sirius-db/sirius/issues/699)):
-the engine is being flipped to feed a native `sirius::ast::node` instead of a raw
-`duckdb::Expression` (cf. repo commit *"flip gpu_expression_translator to
-sirius::ast::node input"*). For now the AST overloads mostly **round-trip back to the
-DuckDB path** via `sirius::ast::to_duckdb` (you can see this in `execute(table_view)` at
-341 and `select` at 363), being replaced one specialization at a time. Class invariant:
-**exactly one** of `_expressions` / `_ast_expressions` is non-empty (asserted at 282/358).
+**As of this pull, the executor is AST-native.** The `sirius::expression` PIMPL wrapper was
+**retired** (`#703`) and `src/include/expression/expression.hpp` deleted. Concretely:
+- ctors take **`sirius::ast::node`** (or a `duckdb::vector<unique_ptr<node>>`); the single
+  member is **`_ast_expressions`** — the old `_expressions` (DuckDB) member is **gone**.
+- dispatch is `execute(sirius::ast::node const&, mode)` (header ~347) via `std::visit`, into
+  **`sirius::ast::*` per-alternative overloads only** (header ~392–407) — including a **new
+  `sirius::ast::aggregate` overload**. The 9 `duckdb::BoundXExpression` overloads are gone.
+- it **still round-trips through `sirius::ast::to_duckdb`** internally — but only to recover
+  `expression_class` + `return_type` for result **post-processing** (and the BOOLEAN
+  assertion in `select`), not to evaluate. So `to_duckdb` is now a post-processing detail,
+  not a "fall back to the DuckDB path" bridge.
 
-> Don't over-invest in the Sirius-AST overloads on a first read — know they exist, know
-> *why* (decoupling from DuckDB types, like the PIMPL `sirius::expression` wrapper does
-> at the operator surface), and read the DuckDB path for the actual logic.
+Everything else in this map (the tree-of-AST-trees, the three strategies, `min_ast_size`,
+the breakers, the `specializations/gpu_execute_*.cpp` fan-out — all 9 files still present) is
+unchanged. The takeaway: **there is one input surface now (Sirius AST)**; you no longer have
+to track a dual DuckDB/AST path.
+
+<details><summary>Historical (pre-pull): the dual surface</summary>
+
+Previously there were two parallel worlds — a DuckDB-typed path (`_expressions`,
+`duckdb::BoundXExpression` overloads, `sirius::expression` PIMPL) and a newer
+`sirius::ast::node` path that round-tripped back to it — an in-progress migration tracked by
+[sirius-db/sirius#699](https://github.com/sirius-db/sirius/issues/699), replaced one
+specialization at a time. That is the state our Week-3 reading originally described.
+</details>
 
 ## Types fundamental to *this* file
 

@@ -88,7 +88,8 @@ part and keeps going).
 - **`column_name_resolver_fxn`** = `std::function<std::string(duckdb::idx_t)>` *(this
   file)* — maps a bound-reference index to a column *name*, for name-based AST refs.
   **Think:** "positional ref → named ref, for parquet pushdown."
-- **`sirius::join_condition`** *(Sirius; PIMPL over `duckdb::JoinCondition`)* — one
+- **`sirius::join_condition`** *(Sirius; holds a `sirius::ast::node` + a Sirius-native
+  `comparison_type` — no longer a DuckDB wrapper as of pull `d9172de6`, `#701/#703`)* — one
   `left <comparison> right` join clause. **Think:** "one ON-clause comparison."
 - **`cudf::ast::tree` / `ast_operator`** *(cuDF)* — see
   [`gpu_expression_executor.md`](gpu_expression_executor.md); same types, here built for

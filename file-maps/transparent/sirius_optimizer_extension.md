@@ -46,8 +46,10 @@ labeled with its file. `─▶` leaves these files; `· Step N` = `execution-flo
 ```
 sirius_optimizer_extension.cpp — install (during DuckDB's optimize → prepare):
   sirius_pre_optimizer_hook()        :40   disable incompatible optimizers              · Step 1
-  sirius_optimizer_hook()            :74   ─▶ SiriusContext.set_captured_logical_plan
-     └ then SiriusContext::OnFinalizePrepare()  (sirius_context.cpp)
+  sirius_optimizer_hook()            :74   ─▶ SiriusContext.set_captured_logical_plan  (stash only)
+  ════ control returns to DuckDB; it finishes preparing the statement ════
+  DuckDB: ClientContext::PrepareInternal     ◀─ calls the hook (NOT the optimizer hook above)
+     └─▶ SiriusContext::OnFinalizePrepare()  (sirius_context.cpp:859)  [gated on CanRequestRebind]
                                            ─▶ create_plan → installs PhysicalSiriusExecution
 
 physical_sirius_execution.cpp — run (DuckDB drives PhysicalSiriusExecution as a source op):
@@ -102,6 +104,15 @@ generator's `create_plan()`** (the single source of truth for GPU support), and 
 it succeeds — replaces DuckDB's physical plan with a `PhysicalSiriusExecution`. If
 `create_plan()` throws (unsupported op) the CPU plan stays → **silent fallback**.
 Full treatment in [`file-maps/sirius_context.md`](../sirius_context.md).
+
+> **Important: the optimizer hook does *not* call `OnFinalizePrepare`.** This is
+> capture-then-callback. `sirius_optimizer_hook` only *stashes* the plan
+> (`set_captured_logical_plan`) and returns; **DuckDB itself** later calls
+> `OnFinalizePrepare` during prepare-finalization (`ClientContext::PrepareInternal`),
+> but only on registered states whose `CanRequestRebind()` returns `true` — which
+> `SiriusContext` overrides to do. So the two pieces are connected *through DuckDB*, not by
+> a direct call. See [`file-maps/sirius_context.md`](../sirius_context.md) →
+> "Who calls `OnFinalizePrepare`?" for the registration + gate detail.
 
 ## Piece 3 — `PhysicalSiriusExecution` (Step 2)
 

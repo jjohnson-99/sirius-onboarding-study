@@ -47,11 +47,13 @@ Two things that look confusing until named:
 1. **The per-type logic is fanned out** into `specializations/gpu_execute_*.cpp` (one
    file per expression class). The driver `.cpp` is a dispatcher; the specializations are
    where comparison/cast/function/CASE/IN each decide "emit AST node vs. materialize."
-2. **There are two parallel input surfaces** — a DuckDB-typed path and a newer
-   `sirius::ast::node` path — because of an in-progress migration to decouple the
-   executor from DuckDB types (issue #699). The AST path currently round-trips back to
-   the DuckDB path; read the DuckDB path for the logic, just *know why* the other exists
-   (same decoupling instinct as the PIMPL `sirius::expression` wrapper).
+2. **The input surface is the Sirius AST** (`sirius::ast::node`). *(Updated for pull
+   `d9172de6`: this used to be a dual DuckDB/AST surface mid-migration — that migration has
+   since landed (`#701/#703`), the `sirius::expression` PIMPL is retired, and the executor is
+   now AST-native. It still round-trips through `sirius::ast::to_duckdb` internally, but only
+   to recover types for result post-processing — not to evaluate. See the
+   [executor map](../file-maps/expression_executor/gpu_expression_executor.md) and the
+   [post-pull report](../reports/post-pull-review-2026-06-15.md).)*
 
 The **translator** (`gpu_expression_translator`) is a separate, smaller utility: it only
 *builds* a cuDF AST and hands it off (no evaluation, no breakers — `nullopt` if it can't),

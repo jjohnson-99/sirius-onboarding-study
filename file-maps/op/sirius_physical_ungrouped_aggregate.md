@@ -10,6 +10,14 @@ via `/module-context` in a Claude Code session).
 
 > Paths relative to the Sirius repo root. Lines as of 2026-06-10.
 
+> **All line numbers below refreshed for pull `d9172de6` (2026-06-15).** This file was
+> reorganized (`#926`, plus the AST-native expression changes); the two-phase local→merge
+> structure is unchanged. **Behavior change (`#926`):** `make_avg_column` (231) now keeps
+> **decimal AVG out of `long double`** — it divides the merged SUM by the merged COUNT
+> **on-device** (`cudf::binary_operation` after casts, ~249–262) rather than copying scalars
+> to the host and round-tripping through `long double`, eliminating that precision loss. See
+> [`../../reports/post-pull-review-2026-06-15.md`](../../reports/post-pull-review-2026-06-15.md).
+
 ## A note on the target query
 
 The Week 2 trace query — `SELECT l_returnflag, SUM(l_quantity) FROM lineitem GROUP BY
@@ -38,7 +46,7 @@ This file defines **both** classes. The pipeline splitter wires them with a `FUL
 barrier (merge waits for all partials), per the plan-gen doc. This local→merge shape
 is *the* recurring pattern for blocking aggregations in Sirius.
 
-## Shared setup: `build_aggregate_layout()` (66–212)
+## Shared setup: `build_aggregate_layout()` (114–229)
 
 Both phases first translate DuckDB's bound aggregate expressions into a plan:
 
@@ -47,13 +55,13 @@ Both phases first translate DuckDB's bound aggregate expressions into a plan:
 - For each, records an `aggregate_spec` (kind, input column index, return type) and
   the **cuDF merge kind** used in phase 2 (e.g. SUM→`cudf::aggregation::SUM`,
   first→`NTH_ELEMENT`).
-- **AVG decomposition** (182–196): cuDF has no AVG reduce, so AVG becomes **two** local
+- **AVG decomposition** (195–209): cuDF has no AVG reduce, so AVG becomes **two** local
   columns — a SUM and a COUNT — merged separately, then divided in phase 2. This is
   the same SUM+COUNT trick the plan-gen doc mentions.
 - Rejects what the GPU path can't do: `DISTINCT` aggregates and multi-argument
   aggregates throw `not_implemented_exception` → CPU fallback.
 
-## Phase 1 — local aggregate: `execute()` (322–446)
+## Phase 1 — local aggregate: `execute()` (267–391)
 
 The `execute()` override, following the four-step shape from
 [`sirius_physical_limit.md`](sirius_physical_limit.md). For each input batch, for each
@@ -64,19 +72,19 @@ The `execute()` override, following the four-step shape from
 - `FIRST` → `cudf::get_element(col, 0)`.
 
 Each result is a 1-row column; the columns become a 1-row `cudf::table` wrapped as the
-output batch. **Read the SUM widening (396–421) closely** — it's a great example of a
+output batch. **Read the SUM widening (337–362) closely** — it's a great example of a
 GPU correctness landmine: DECIMAL32→64→128 and small-int→INT64 casts *before* reducing
 to avoid overflow. (Per operators.md, BIGINT SUM actually falls back to CPU entirely
 because the GPU lacks an INT128 accumulator — the kind of footgun worth remembering.)
 
-## Phase 2 — merge: `sirius_physical_ungrouped_aggregate_merge` (460–569)
+## Phase 2 — merge: `sirius_physical_ungrouped_aggregate_merge` (410–522)
 
-- Constructed from the phase-1 operator (460), deep-copying the aggregate expressions.
-- `execute()` (482): if one partial, pass through; else
+- Constructed from the phase-1 operator (410/421), deep-copying the aggregate expressions.
+- `execute()` (432): if one partial, pass through; else
   `gpu_merge_impl::merge_ungrouped_aggregate(partials, merge_kinds, ...)` combines them
-  with the recorded cuDF merge kinds. Then, if `has_avg`, `make_avg_column()` (214)
+  with the recorded cuDF merge kinds (`merge_ungrouped_aggregate`, 459). Then, if `has_avg`, `make_avg_column()` (231, called at 479)
   divides the merged SUM by the merged COUNT to produce the final average.
-- **`get_next_task_input_data()` override (552)** — *this is the merge-specific bit
+- **`get_next_task_input_data()` override (502)** — *this is the merge-specific bit
   worth seeing.* Instead of the base "one batch per port," it **drains every batch
   from the port** under the operator lock, so a single merge task sees *all* partials
   at once. That's how "merge everything" is expressed against the task machinery.
