@@ -22,9 +22,13 @@ launcher**:
   (**Step 5**),
 - **yield** — pull the materialized result out of the RESULT_COLLECTOR (**Step 9**).
 
-The heavy lifting of *how* pipelines are split is delegated to
-`sirius_pipeline_converter` (Week 4–5 reading); the engine is the ~35-line
-orchestrator around it.
+The heavy lifting of *how* pipelines are built and split is delegated to `src/pipeline/`:
+the meta-pipeline tree ([`pipeline/sirius_meta_pipeline.md`](pipeline/sirius_meta_pipeline.md),
+Step 4a) and **the converter**
+([`pipeline/sirius_pipeline_converter.md`](pipeline/sirius_pipeline_converter.md), Step 4b–4d —
+the 1,343-line core where the splitting happens). The engine is the ~50-line orchestrator
+around them. *(If you're wondering "where does Step 4 actually live?" — it's the converter,
+not this file.)*
 
 ## Call sequence
 
@@ -32,62 +36,69 @@ The three verbs are called by `sirius_interface` (see
 [`sirius_interface.md`](sirius_interface.md)); `─▶` leaves this file:
 
 ```
-initialize(plan)                              :140   ◀─ Step 4 entry
-├─ reset()                                    :106
-├─ prefetch_iceberg_delete_data(plan)         :289     (iceberg-only; skip on first read)
-└─ initialize_internal(plan)                  :353   ══ BUILD PIPELINES
-   ├─ root_pipeline->build(plan) / ready()    :375   ─▶ operators' build_pipelines()  (meta-pipeline)
-   ├─ converter.convert(root_pipeline)        :383   ─▶ sirius_pipeline_converter  (split + wire)
-   │     ⋯ calls construct_sirius_specific_operator()  :204  → injects MERGE / second-phase ops
-   ├─ materialize_repository_wiring(…)         :386     plan-time wiring → live repositories
-   └─ new_scheduled = …                        :389     ◀ the runnable pipelines
+initialize(plan)                              :143   ◀─ Step 4 entry
+├─ reset()                                    :109
+├─ prefetch_iceberg_delete_data(plan)         :293     (iceberg-only; skip on first read)
+└─ initialize_internal(plan)                  :350   ══ BUILD PIPELINES
+   ├─ root_pipeline->build(plan) / ready()    :372   ─▶ operators' build_pipelines()  · Step 4a
+   │                                                   (sirius_meta_pipeline.md)
+   ├─ converter.convert(root_pipeline)        :380   ─▶ sirius_pipeline_converter  (split + wire) · Step 4b–4d
+   │     ⋯ calls construct_sirius_specific_operator()  (converter.cpp:61)  → injects MERGE / 2nd-phase ops
+   ├─ materialize_repository_wiring(…)         :383     plan-time wiring → live repositories · Step 4c
+   └─ new_scheduled = …                        :386     ◀ the runnable pipelines
 
-execute()                                     :154   ══ LAUNCH + WAIT  (Step 5)
-├─ ctx->create_query(new_scheduled, …)        :165   ─▶ SiriusContext  (registers the query)
-├─ task_scheduler.start_query()               :170   ─▶ task_scheduler → future
-└─ future.get()                               :172     BLOCKS until the query completes
-      ⋯ on exception → drain_after_error()     :180     drains in-flight GPU tasks first
+execute()                                     :157   ══ LAUNCH + WAIT  (Step 5)
+├─ ctx->create_query(new_scheduled, …)        :168   ─▶ SiriusContext  (registers the query)
+├─ task_scheduler.start_query()               :173   ─▶ task_scheduler → future
+└─ future.get()                               :175     BLOCKS until the query completes
+      ⋯ on exception → drain_after_error()     :183     drains in-flight GPU tasks first
 
-get_result()                                  :129   ◀─ Step 9 (called by interface's fetch)
-└─ result_collector.get_result()              :136     materialized result out
+get_result()                                  :132   ◀─ Step 9 (called by interface's fetch)
+└─ result_collector.get_result()              :139     materialized result out
 ```
 
 `initialize` (build) and `execute` (launch) mirror `sirius_interface`'s pending/execute
-split. The `─▶` arrows are the engine's handoffs — to the **converter** (the real pipeline
-machinery, Week 4–5), the **`task_scheduler`** (Week 4), and **`SiriusContext`**; the engine
-itself just orchestrates. `construct_sirius_specific_operator` is reached *from inside* the
-converter, where the local→merge operator pairs are born.
+split. The `─▶` arrows are the engine's handoffs — to the **meta-pipeline** + **converter**
+(the real pipeline construction, Step 4 —
+[`pipeline/sirius_meta_pipeline.md`](pipeline/sirius_meta_pipeline.md) /
+[`pipeline/sirius_pipeline_converter.md`](pipeline/sirius_pipeline_converter.md)), the
+**`task_scheduler`** (Week 4), and **`SiriusContext`**; the engine itself just orchestrates.
+`construct_sirius_specific_operator` lives *inside* the converter (converter.cpp:61), where
+the local→merge operator pairs are born.
 
 ## The three verbs (call them in this order)
 
 | Function (signature) | Line | Doc step / role |
 |---|---|---|
-| `void initialize(unique_ptr<op::sirius_physical_operator> plan)` | 140 | **Step 4 entry.** Marks the query `planning()`, `reset()`s prior state, takes ownership of the plan (`sirius_owned_plan`), pre-fetches Iceberg delete data, then calls `initialize_internal`. |
-| `void initialize_internal(op::sirius_physical_operator& plan)` | 353 | **Step 4 proper.** The build pipeline (see breakdown below). Ends with `new_scheduled` = the runnable pipelines. |
-| `void execute()` | 154 | **Step 5.** Hands `new_scheduled` to `SiriusContext::create_query`, calls `task_scheduler.start_query()` → a `future`, then **blocks on `future.get()`**. On any exception, calls `drain_after_error()` before rethrowing (prevents use-after-free of repositories). |
-| `unique_ptr<QueryResult> get_result()` | 129 | **Step 9.** Casts the plan root to `sirius_physical_materialized_collector` and returns its materialized result. Called by `sirius_interface::fetch_result_internal`. |
+| `void initialize(unique_ptr<op::sirius_physical_operator> plan)` | 143 | **Step 4 entry.** Marks the query `planning()`, `reset()`s prior state, takes ownership of the plan (`sirius_owned_plan`), pre-fetches Iceberg delete data, then calls `initialize_internal`. |
+| `void initialize_internal(op::sirius_physical_operator& plan)` | 350 | **Step 4 orchestrator** (the real work is in `src/pipeline/` — see breakdown below). Ends with `new_scheduled` = the runnable pipelines. |
+| `void execute()` | 157 | **Step 5.** Hands `new_scheduled` to `SiriusContext::create_query`, calls `task_scheduler.start_query()` → a `future`, then **blocks on `future.get()`**. On any exception, calls `drain_after_error()` before rethrowing (prevents use-after-free of repositories). |
+| `unique_ptr<QueryResult> get_result()` | 132 | **Step 9.** Casts the plan root to `sirius_physical_materialized_collector` and returns its materialized result. Called by `sirius_interface::fetch_result_internal`. |
 
-### `initialize_internal()` step by step (lines 353–404)
+### `initialize_internal()` step by step (lines 350–401)
 
-This is the part to read slowly — it's the whole of Step 4 in ~50 lines:
+This is the part to read slowly — but note it only *orchestrates* Step 4 in ~50 lines; the
+substance is in [`pipeline/sirius_meta_pipeline.md`](pipeline/sirius_meta_pipeline.md) (4a) and
+[`pipeline/sirius_pipeline_converter.md`](pipeline/sirius_pipeline_converter.md) (4b–4d):
 
-1. **Get config** (355–361) — pull `operator_params` off the `SiriusContext`
+1. **Get config** (352–358) — pull `operator_params` off the `SiriusContext`
    (`registered_state->Get<SiriusContext>("sirius_state")`, the same keyed lookup you
    saw in the extension/interface files).
-2. **Build the meta-pipeline tree** (366–377) — create a `sirius_meta_pipeline` root
+2. **Build the meta-pipeline tree** (362–374) — create a `sirius_meta_pipeline` root
    and call `root_pipeline->build(plan)` then `->ready()`. This recurses through every
    operator's `build_pipelines()` (the base implementation is in
    [`op/sirius_physical_operator.md`](op/sirius_physical_operator.md)), producing
    DuckDB-style pipelines (separate source/operators/sink). *This is plan-gen doc
    Part 2.*
-3. **Convert / split** (380–383) — `sirius_pipeline_converter(...).convert(root)` does
+3. **Convert / split** (380) — `sirius_pipeline_converter(...).convert(root)` does
    the Sirius-specific splitting: injecting PARTITION/CONCAT/MERGE operators at
    pipeline boundaries and finalizing each pipeline's operator list. *This is plan-gen
-   doc Part 3.* (Deferred to Week 4–5; just know the engine launches it here.)
-4. **Materialize wiring** (386–387) — turn the converter's plan-time wiring
-   descriptors into real `shared_data_repository` objects + ports. *Plan-gen doc
-   Part 4.*
-5. **Stash results** (389–403) — `new_scheduled` (the runnable pipelines),
+   doc Part 3 / execution-flow Step 4b–4d* — the substance, fully mapped in
+   [`pipeline/sirius_pipeline_converter.md`](pipeline/sirius_pipeline_converter.md).
+4. **Materialize wiring** (383) — turn the converter's plan-time wiring
+   descriptors into real `shared_data_repository` objects + ports (`repository_wiring_materializer.cpp`).
+   *Plan-gen doc Part 4 / Step 4c.*
+5. **Stash results** (386–401) — `new_scheduled` (the runnable pipelines),
    `new_pipeline_breakers` (injected operators), and a debug plan dump.
 
 ## Supporting machinery

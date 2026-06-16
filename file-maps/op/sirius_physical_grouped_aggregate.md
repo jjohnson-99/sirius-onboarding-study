@@ -35,8 +35,9 @@ via **`cudf::groupby`**. Same two-phase local→merge shape
   partials for a key land in one partition (the "colocate equal keys" move shared with hash
   join — [`hash-join-build-probe.md`](../../reference/explainers/hash-join-build-probe.md)).
 - **`MERGE_GROUP_BY`** = `sirius_physical_grouped_aggregate_merge` — combines a partition's
-  partials into the final per-group rows (engine builds it via
-  `construct_sirius_specific_operator`).
+  partials into the final per-group rows (the pipeline converter builds it via
+  `construct_sirius_specific_operator`, see
+  [`../pipeline/sirius_pipeline_converter.md`](../pipeline/sirius_pipeline_converter.md)).
 
 ## Phase 1 — `HASH_GROUP_BY` (local, per batch)
 

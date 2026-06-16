@@ -24,13 +24,21 @@ query-lifecycle spine (`sirius_interface` → `sirius_engine` → scheduler), bu
 an *operator* reaches for when it actually needs to evaluate an expression on a batch.
 Two operators are its whole reason to exist:
 
-- **FILTER** (`src/op/sirius_physical_filter.cpp:49`) constructs one and calls
+- **FILTER** (`src/op/sirius_physical_filter.cpp:48`) constructs one and calls
   `select(table_view)`.
 - **PROJECTION** (`src/op/sirius_physical_projection.cpp:52`) constructs one and calls
   `execute(table_view)`.
 
-(A handful of other call sites reuse it: table scan / parquet scan filter pushdown, and
-the nested-loop join's per-row lambda. Same class, narrower entry points.)
+Other call sites reuse it (same class, narrower entry points): `sirius_physical_table_scan.cpp`
+and the GPU-scan filter-pushdown path — `src/op/scan/{duckdb_native,parquet,pinned_table}_gpu_ingestible.cpp`
+(post-pull scan unification, `#871`) — plus the nested-loop join's per-row lambda
+(`sirius_physical_nested_loop_join.cpp`). *(The `gpu_execution`/`read_parquet` table-function
+in `sirius_extension.cpp` also constructs one.)*
+
+> **Where the input comes from (the producer entry):** the `sirius::ast::node` this executor
+> evaluates is **not** built here — it's produced at plan time by `sirius::ast::from_duckdb`
+> and stored on the operator. See [`../expression/ast.md`](../expression/ast.md) (the
+> DuckDB-expr → Sirius-AST entry). This map is the *consumer*.
 
 It depends *downward* on **cuDF** (the AST types `cudf::ast::tree` / `compute_column`,
 and the materialize-mode `cudf::unary_operation` / `binary_operation` / `cast`) and on

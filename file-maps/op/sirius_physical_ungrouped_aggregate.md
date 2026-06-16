@@ -33,8 +33,9 @@ the *actual* grouping happens (`cudf::groupby`), see
 ## The big idea: aggregation is two-phase (local → merge)
 
 A pipeline runs in parallel over many input batches, so you can't sum a column in one
-shot. Sirius splits aggregation into two operators (the engine creates the pair in
-`construct_sirius_specific_operator`, see [`file-maps/sirius_engine.md`](../sirius_engine.md)):
+shot. Sirius splits aggregation into two operators (the pipeline converter creates the pair
+in `construct_sirius_specific_operator`, see
+[`../pipeline/sirius_pipeline_converter.md`](../pipeline/sirius_pipeline_converter.md)):
 
 1. **`sirius_physical_ungrouped_aggregate`** (`UNGROUPED_AGGREGATE`) — runs per input
    batch, producing a **partial** aggregate (one row): `SUM` of this batch, `COUNT` of

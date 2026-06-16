@@ -9,9 +9,10 @@ target query's `lineitem` scan.
 
 ## Where this sits
 
-For `SELECT ... FROM lineitem ...`, the plan generator emits a `TABLE_SCAN`; the
-engine's `construct_sirius_specific_operator`
-([`file-maps/sirius_engine.md`](../sirius_engine.md), line 226) sees the table function is
+For `SELECT ... FROM lineitem ...`, the plan generator emits a `TABLE_SCAN`; the pipeline
+converter's `construct_sirius_specific_operator`
+([`../pipeline/sirius_pipeline_converter.md`](../pipeline/sirius_pipeline_converter.md),
+converter.cpp:61) sees the table function is
 `seq_scan` and builds a **`sirius_physical_duckdb_scan`** — a sequential scan that
 borrows DuckDB's own execution engine to read the table, then hands rows to the GPU.
 (If `lineitem` were a parquet file, it'd be `PARQUET_SCAN` instead.) It is the

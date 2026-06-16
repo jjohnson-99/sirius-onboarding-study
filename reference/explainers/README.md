@@ -58,6 +58,9 @@ scope), and
 **[MVCC](mvcc-concurrency-control.md)** (concurrency control — Sirius defers to DuckDB;
 optional). *Execution & dev:* **[types (DuckDB↔cuDF↔Sirius)](types-duckdb-cudf-sirius.md)**,
 **[NULLs & validity](nulls-and-validity.md)**, and **[testing Sirius](testing-sirius.md)**.
+*Optimizations (mostly forward-looking in Sirius):*
+**[bloom filters](bloom-filters.md)** (probabilistic membership for join/scan pruning — the
+dynamic-filter framework exists as scaffolding, but bloom itself is not implemented).
 
 ## Index — by when to prime
 
@@ -94,4 +97,5 @@ grounded — the week is a *suggestion*, not a gate.
 | [hash-join-build-probe.md](hash-join-build-probe.md) | Week 1 → 5 | Why hash join beats nested loops, the build (small side → hash table) / probe (stream big side) split, join types, partitioning when it won't fit, the build-side pipeline breaker, and Sirius's cuDF join modes. |
 | [parquet-format.md](parquet-format.md) | Week 5 | The Parquet file layout (row groups → column chunks → pages → footer), why the footer enables cheap schema + column pruning + row-group skipping, and how Sirius decodes it on the GPU. |
 | [iceberg-table-format.md](iceberg-table-format.md) | Week 5 | Apache Iceberg: a metadata/table layer over Parquet files (snapshots, time travel, schema/partition evolution, row-level deletes via delete files/deletion vectors) and how Sirius's `ICEBERG_SCAN` applies the deletes on the GPU. |
+| [bloom-filters.md](bloom-filters.md) | Week 5 | What a bloom filter is (one-sided membership: "definitely not / maybe"), why DBs use them for join SIP / dynamic pushdown + parquet skipping, and an honest status check — **not implemented in Sirius**; the dynamic-filter scaffolding exists but is unused, and only zone-map (not bloom) is a concrete kind. |
 | [mvcc-concurrency-control.md](mvcc-concurrency-control.md) | Optional | Concurrency control & MVCC — snapshot isolation, readers-don't-block-writers, why DuckDB uses it, and why Sirius *doesn't* (it inherits DuckDB's MVCC; its own "concurrency" is GPU scheduling). Background the plan defers. |

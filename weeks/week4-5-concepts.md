@@ -21,6 +21,35 @@ SELECT ... FROM lineitem JOIN orders ON l_orderkey = o_orderkey ...;
 A join forces everything interesting: multiple pipelines, cross-pipeline data flow with
 barriers, multi-GPU scheduling, and the build/probe split.
 
+## Part 0 — Pipeline construction (execution-flow Step 4)
+
+**File maps:**
+[`../file-maps/pipeline/sirius_meta_pipeline.md`](../file-maps/pipeline/sirius_meta_pipeline.md)
+(4a), [`../file-maps/pipeline/sirius_pipeline_converter.md`](../file-maps/pipeline/sirius_pipeline_converter.md)
+(4b–4d) · **doc:** `docs/super-sirius/execution-flow.md` Step 4
+
+Before anything is *scheduled*, the physical plan has to become **runnable pipelines** —
+this is Step 4, and it's worth knowing it does **not** live in `sirius_engine.cpp` despite
+the doc's headline. `initialize_internal` (engine) is a ~50-line orchestrator; the substance
+is two `src/pipeline/` files:
+
+- **4a — meta-pipelines** (`sirius_meta_pipeline.cpp`): carve the plan into pipelines
+  *grouped by shared sink*, build-side-first (DuckDB's meta-pipeline pattern). Output: a
+  dependency-ordered pipeline tree.
+- **4b–4d — the converter** (`sirius_pipeline_converter.cpp`, 1,343 lines — the real core):
+  deep-copy, then **split** each pipeline into Sirius's GPU shapes — this is where the
+  `HASH_JOIN → PARTITION+CONCAT`, `HASH_GROUP_BY → PARTITION+MERGE_GROUP_BY`,
+  `UNGROUPED_AGGREGATE → PARTITION+MERGE`, and 4-phase `ORDER_BY` transforms you met in
+  Weeks 2–3 are **actually generated** (`construct_sirius_specific_operator` mints the merge
+  sinks; the `split_*` methods insert the breakers). It emits **plan-time wiring
+  descriptors**, which `materialize_repository_wiring()` then turns into live repositories +
+  ports (4c).
+
+The clean mental model: **4a groups by sink; 4b splits into GPU shapes; 4c/4d wire +
+finalize.** The converter is pure plan math — nothing touches cuCascade until
+materialization. With Part 0 in hand, the "black box" the engine handed off in Week 2 is no
+longer opaque, and Part 1 picks up exactly where the runnable pipelines enter the scheduler.
+
 ## Part 1 — The scheduler tier: three roles, three executors (Week 4)
 
 **File maps:**
@@ -30,8 +59,8 @@ barriers, multi-GPU scheduling, and the build/probe split.
 **doc:** `docs/super-sirius/pipeline-execution.md`, `task-creator.md`
 
 In Week 2 the engine ([`../file-maps/sirius_engine.md`](../file-maps/sirius_engine.md))
-built pipelines and handed them to "the scheduler" as a black box. Weeks 4–5 open that
-box. The clean way to hold it is **three roles**:
+built pipelines (Part 0 above) and handed them to "the scheduler" as a black box. Weeks 4–5
+open that box too. The clean way to hold the scheduler is **three roles**:
 
 - **`task_creator`** decides **what** runs next. Its core is a *hint-chain recursion*: an
   operator that isn't ready (`get_next_task_hint()` → `WAITING_FOR_INPUT_DATA`) points at

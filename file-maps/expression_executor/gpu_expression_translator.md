@@ -25,12 +25,23 @@ can't translate, it bails with `nullopt`.
 
 ## Where this sits
 
-Downstream consumer: `src/op/sirius_physical_hash_join.cpp`, MIXED_JOIN mode — it needs
-inequality conditions (`a.x < b.y`) expressed as a cuDF AST so `cudf::mixed_join()` can
-evaluate them on the GPU during the join. So this file is really part of the join story
-(Week 4–5); you meet it in Week 3 only because it lives in `expression_executor/`.
-Depends on cuDF AST (`cudf::ast::tree`, `ast_operator`) and RMM (an owned stream for the
-literal scalars' lifetime).
+Downstream consumers (entries):
+- `src/op/sirius_physical_hash_join.cpp` — **MIXED_JOIN** mode: inequality conditions
+  (`a.x < b.y`) → cuDF AST for `cudf::mixed_join()` (the primary use; Week 4–5 join story).
+- `src/op/sirius_physical_nested_loop_join.cpp` — NLJ also translates its condition to a
+  cuDF AST.
+- **filter pushdown into the GPU parquet scan** — `src/op/scan/scan_utils.cpp`
+  (`convert_table_filters_to_expression`) + `src/op/scan/parquet_gpu_ingestible.cpp` and
+  `sirius_physical_parquet_scan.cpp`, via `translate_expression_with_names` (name-based refs).
+
+So you meet it in Week 3 only because it lives in `expression_executor/`; its real users are
+joins (Week 4–5) and the scan filter-pushdown path (Week 5). Depends on cuDF AST
+(`cudf::ast::tree`, `ast_operator`) and RMM (an owned stream for the literal scalars'
+lifetime).
+
+> **Input (producer entry):** like the executor, the translator now takes `sirius::ast::node`
+> (produced by `sirius::ast::from_duckdb` at plan time — [`../expression/ast.md`](../expression/ast.md)),
+> not raw DuckDB types.
 
 ## The result type (and a lifetime gotcha worth seeing)
 

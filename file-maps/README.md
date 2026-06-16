@@ -29,6 +29,10 @@ LIFECYCLE   sirius_execute_query → pending (build) · execute (run) · fetch
 ENGINE      initialize → build pipelines ;  execute → launch + block
                                                                   [sirius_engine · Step 4, 5]
         │
+        ▼   initialize_internal delegates Step 4 to src/pipeline/
+CONSTRUCT   meta_pipeline (4a: group by sink) → converter (4b–4d: split + wire)
+                                                                  [pipeline · Step 4]
+        │
         ▼   engine hands new_scheduled to the scheduler
 SCHEDULER   task_creator (what runs) · task_scheduler (where/when) · gpu_pipeline_executor (run)
                                                                   [Week 4 — see maps below]
@@ -53,6 +57,8 @@ This is just the connective overview — the per-function detail lives in each m
 - [`file-maps/transparent/sirius_optimizer_extension.md`](transparent/sirius_optimizer_extension.md#call-sequence) — transparent doorway
 - [`file-maps/sirius_interface.md`](sirius_interface.md#call-sequence) — lifecycle (Steps 3 & 9)
 - [`file-maps/sirius_engine.md`](sirius_engine.md#call-sequence) — build + launch (Steps 4 & 5)
+- [`file-maps/pipeline/sirius_meta_pipeline.md`](pipeline/sirius_meta_pipeline.md) — Step 4a (build pipelines)
+- [`file-maps/pipeline/sirius_pipeline_converter.md`](pipeline/sirius_pipeline_converter.md#call-sequence) — Step 4b–4d (split + wire)
 
 For the *conceptual* version of the same trace (operators, scan, result included), see
 [`weeks/week2-concepts.md`](../weeks/week2-concepts.md).
@@ -64,10 +70,11 @@ For the *conceptual* version of the same trace (operators, scan, result included
 | **Doorways** | [sirius_extension](sirius_extension.md), [transparent/sirius_optimizer_extension](transparent/sirius_optimizer_extension.md) |
 | **Lifecycle** | [sirius_interface](sirius_interface.md) |
 | **Engine** | [sirius_engine](sirius_engine.md) |
+| **Pipeline construction (Step 4)** | [pipeline/sirius_meta_pipeline](pipeline/sirius_meta_pipeline.md) (4a build), [pipeline/sirius_pipeline_converter](pipeline/sirius_pipeline_converter.md) (4b–4d split/wire) |
 | **Ownership** | [sirius_context](sirius_context.md) |
-| **Plan** | [planner/sirius_physical_plan_generator](planner/sirius_physical_plan_generator.md) |
+| **Plan** | [planner/sirius_physical_plan_generator](planner/sirius_physical_plan_generator.md) (dispatcher), [planner/plan-builders](planner/plan-builders.md) (per-node builders + `from_duckdb` call sites), [aggregate](planner/sirius_plan_aggregate.md) + [comparison_join](planner/sirius_plan_comparison_join.md) (heavyweight builders) |
 | **Operators** | [op/sirius_physical_operator](op/sirius_physical_operator.md) (base), [limit](op/sirius_physical_limit.md), [duckdb_scan](op/sirius_physical_duckdb_scan.md), [ungrouped_aggregate](op/sirius_physical_ungrouped_aggregate.md), [grouped_aggregate](op/sirius_physical_grouped_aggregate.md), [top_n](op/sirius_physical_top_n.md), [partition](op/sirius_physical_partition.md), [hash_join](op/sirius_physical_hash_join.md) |
-| **Expressions** | [expression_executor/gpu_expression_executor](expression_executor/gpu_expression_executor.md) (FILTER/PROJECTION compute), [expression_executor/gpu_expression_translator](expression_executor/gpu_expression_translator.md) (mixed-join AST) |
+| **Expressions** | [expression/ast](expression/ast.md) (the `sirius::ast::node` AST + `from_duckdb` — producer entry), [expression_executor/gpu_expression_executor](expression_executor/gpu_expression_executor.md) (FILTER/PROJECTION compute), [expression_executor/gpu_expression_translator](expression_executor/gpu_expression_translator.md) (mixed-join AST) |
 | **Scheduler tier** | [pipeline/task_scheduler](pipeline/task_scheduler.md) (where/when), [pipeline/gpu_pipeline_executor](pipeline/gpu_pipeline_executor.md) (per-GPU run), [creator/task_creator](creator/task_creator.md) (what runs next) |
 | **Scan** | [op/scan/duckdb_scan_executor](op/scan/duckdb_scan_executor.md) (host-I/O scan executor + cache) |
 | **Memory & degradation** | [memory/sirius_memory_reservation_manager](memory/sirius_memory_reservation_manager.md) (tiers/reservations), [downgrade/downgrade_executor](downgrade/downgrade_executor.md) (spilling), [fallback](fallback.md) (CPU fallback) |

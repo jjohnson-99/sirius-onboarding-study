@@ -133,12 +133,22 @@ The genuinely hard core. Two weeks. Bugs here are races and leaks — don't rush
 
 - [ ] **DB theory slice (~3–4h across both weeks).** Read *"Morsel-Driven
   Parallelism"* (Leis et al., 2014) — the basis for task-based parallel execution.
-- [ ] **Week 4 — Pipeline execution & task creation.**
+- [ ] **Week 4 — Pipeline construction, execution & task creation.**
   - [ ] `docs/super-sirius/pipeline-execution.md`
-  - [ ] `src/include/pipeline/task_scheduler.hpp`, `gpu_pipeline_executor.hpp` (+ `.cpp`)
-        — *study*; the concurrency core, where races live
+  - [ ] **Pipeline construction (execution-flow Step 4).** `src/sirius_engine.cpp::initialize_internal`
+        is only the orchestrator; the real work is in `src/pipeline/`:
+        - [ ] `src/pipeline/sirius_meta_pipeline.cpp` — *read*; Step 4a, carve the plan into
+              pipelines grouped by sink (DuckDB meta-pipeline pattern)
+        - [ ] `src/pipeline/sirius_pipeline_converter.cpp` — *study*; Step 4b–4d, the
+              1,343-line core where operators are **split** into Sirius shapes
+              (PARTITION/CONCAT/MERGE pairs, 4-phase sort) + wiring is computed. This is
+              where most of Step 4 lives. (+ `repository_wiring_materializer.cpp`, the
+              runtime half of 4c)
+  - [ ] **Scheduling/execution (Steps 5/7).** `src/include/pipeline/task_scheduler.hpp`,
+        `gpu_pipeline_executor.hpp` (+ `.cpp`) — *study*; the concurrency core, where races live
   - [ ] `docs/super-sirius/task-creator.md` + `src/creator/` — *read closely*
-  - [ ] Focus: the 5 thread pools, task lifecycle, completion signaling, hint chain.
+  - [ ] Focus: Step 4 splitting (converter); then the 5 thread pools, task lifecycle,
+        completion signaling, hint chain.
 - [ ] **Week 5 — Scan & data flow.**
   - [ ] `docs/super-sirius/scan.md` (largest doc), then the scan subsystem: *read*
         `src/include/op/scan/duckdb_scan_executor.hpp` and the executor logic in
