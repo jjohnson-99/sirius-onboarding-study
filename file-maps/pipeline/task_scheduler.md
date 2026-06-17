@@ -91,7 +91,7 @@ whichever device asks first — that's how multi-GPU load-balances now.
 | `void terminate_query(exception_ptr)` | 181 | report error to the completion handler (unblocks the engine with an exception). |
 | `void drain_after_error()` | 187 | the careful multi-stage shutdown (stop creator → drain queue → drain GPU execs → drain scan exec → restart creator) so QueryEnd can destroy repositories without a use-after-free. |
 | `void wait_for_completion()` | 235 | ensure no tasks in flight before plan teardown. |
-| `void management_eventloop()` | 276 | the matcher above (private). |
+| `void management_eventloop()` | 276 | the matcher above (private). **Entry point:** runs on `_management_thread`, spawned in `start()` (`std::thread(&task_scheduler::management_eventloop, this)`, cpp 117). `start()` is called *once* at context setup — `SiriusContext::initialize()` → `task_scheduler_->start()` (`src/sirius_context.cpp:602`), **not** per query — so the loop is long-lived (context lifetime), not per-`start_query()`. Exits when `stop()` closes `_task_request_channel` (cpp 129) and joins the thread (cpp 132). |
 
 ## State worth knowing (hpp)
 
@@ -119,7 +119,8 @@ whichever device asks first — that's how multi-GPU load-balances now.
   or `schedule()` saying 'new work.'"
 - **`itask` / `gpu_pipeline_task`** *(Sirius)* — the unit of schedulable work; the matcher
   dynamic-casts to `gpu_pipeline_task` to read its `preferred_device_id`. **Think:** "one
-  pipeline run, possibly pinned to a device." Detailed in
+  pipeline run, possibly pinned to a device." Mapped in
+  [`gpu_pipeline_task.md`](gpu_pipeline_task.md); dispatched by
   [`gpu_pipeline_executor.md`](gpu_pipeline_executor.md).
 - **`completion_handler`** *(Sirius; promise/future)* — first `mark_completed()` /
   `report_error()` wins (CAS); `get_awaitable()` is the future the engine waits on.

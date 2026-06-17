@@ -142,7 +142,8 @@ is moved back to the engine as `new_scheduled`.
 - **`sirius_pipeline`** *(`sirius_pipeline.hpp`, 475 lines)* — the execution pipeline object:
   an ordered `operators` list with `source`/`sink` aliases, `get_operators()`,
   `set_pipeline_id()`. **Think:** "the runnable unit the scheduler iterates" (you saw it as
-  `pipeline->get_operators()` in [`gpu_pipeline_task` / the executor](gpu_pipeline_executor.md)).
+  `pipeline->get_operators()` in [`gpu_pipeline_task`](gpu_pipeline_task.md), run by the
+  [executor](gpu_pipeline_executor.md)).
 - **`pipeline_build_context` / `sirius_pipeline_build_state`** *(plan-time)* — config
   (`num_gpus`, `preserve_insertion_order`) + build bookkeeping threaded through 4a→4b.
   **Think:** "the scratch state for one query's construction."

@@ -72,7 +72,8 @@ sirius-onboarding-study/
     │   ├── sirius_meta_pipeline.md        ↔ src/pipeline/sirius_meta_pipeline.cpp (Step 4a build)
     │   ├── sirius_pipeline_converter.md   ↔ src/pipeline/sirius_pipeline_converter.cpp (Step 4b–4d split/wire; + repository_wiring_materializer)
     │   ├── task_scheduler.md              ↔ src/pipeline/task_scheduler.cpp (concurrency core)
-    │   └── gpu_pipeline_executor.md       ↔ src/pipeline/gpu_pipeline_executor.cpp (per-GPU executor)
+    │   ├── gpu_pipeline_executor.md       ↔ src/pipeline/gpu_pipeline_executor.cpp (per-GPU executor)
+    │   └── gpu_pipeline_task.md           ↔ src/pipeline/gpu_pipeline_task.cpp (the resumable task it runs)
     ├── creator/
     │   └── task_creator.md                ↔ src/creator/task_creator.cpp (what runs next)
     ├── memory/
@@ -135,7 +136,8 @@ as we work through [`onboarding-path.md`](onboarding-path.md); not all exist yet
 | [file-maps/pipeline/sirius_meta_pipeline.md](file-maps/pipeline/sirius_meta_pipeline.md) | `src/pipeline/sirius_meta_pipeline.cpp` (Week 4, *read*): **execution-flow Step 4a** — carve the plan into pipelines grouped by shared sink (DuckDB meta-pipeline pattern), build-side-first. |
 | [file-maps/pipeline/sirius_pipeline_converter.md](file-maps/pipeline/sirius_pipeline_converter.md) | `src/pipeline/sirius_pipeline_converter.cpp` (Week 4, *study*): **execution-flow Step 4b–4d, where most of Step 4 lives** — the 1,343-line core that splits operators into Sirius shapes (PARTITION/CONCAT/MERGE pairs, 4-phase sort) and computes repository wiring. Folds in `repository_wiring_materializer`. |
 | [file-maps/pipeline/task_scheduler.md](file-maps/pipeline/task_scheduler.md) | `src/pipeline/task_scheduler.cpp` (Week 4, *study*): the concurrency core — a pull-signal matcher routing tasks to ready GPUs by device preference; owns the sub-executors. Flags the doc-vs-code RR-counter drift. |
-| [file-maps/pipeline/gpu_pipeline_executor.md](file-maps/pipeline/gpu_pipeline_executor.md) | `src/pipeline/gpu_pipeline_executor.cpp` (Week 4, *study*): one per GPU — reserve→pop→dispatch loop, the per-task-device colocation contract, and OOM-as-resumable-retry. |
+| [file-maps/pipeline/gpu_pipeline_executor.md](file-maps/pipeline/gpu_pipeline_executor.md) | `src/pipeline/gpu_pipeline_executor.cpp` (Week 4, *study*): one per GPU — reserve→pop→dispatch loop, dispatches the task's `execute()`, and turns OOM into a resumable retry. |
+| [file-maps/pipeline/gpu_pipeline_task.md](file-maps/pipeline/gpu_pipeline_task.md) | `src/pipeline/gpu_pipeline_task.cpp` (Week 4, *study*): the **resumable task the executor runs** — the per-task-device colocation contract (`prepare_for_processing`), the operator loop (`compute_task`), `oom_reschedule_exception` with a resume index, reservation sizing + the memory-history feedback loop, and `create_rescheduled_task`. Where `gpu_pipeline_executor.md` punts ("not in this file"). |
 | [file-maps/creator/task_creator.md](file-maps/creator/task_creator.md) | `src/creator/task_creator.cpp` (Week 4, *read closely*): decides *what* runs next via the hint-chain recursion; builds scan vs. GPU pipeline tasks. The operator overrides carry the real logic. |
 | [file-maps/op/scan/duckdb_scan_executor.md](file-maps/op/scan/duckdb_scan_executor.md) | `src/op/scan/duckdb_scan_executor.cpp` (Week 5, *read*): the host-I/O scan executor — column-builder scan tasks, a four-level result cache, memory-proportional multi-GPU targeting. |
 | [file-maps/op/sirius_physical_hash_join.md](file-maps/op/sirius_physical_hash_join.md) | `src/op/sirius_physical_hash_join.cpp` (Week 5, *study*): the hardest operator — three execution modes (STANDARD / BUILD_PROBE / MIXED_JOIN), the build/probe state machine, key casts, join-type side-swapping. |

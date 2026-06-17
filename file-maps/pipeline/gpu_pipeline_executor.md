@@ -66,14 +66,18 @@ for. This file is the *other half* of that handshake.
 
 ## What `task->execute(stream)` does (the per-task-device contract)
 
-`task` is a `gpu_pipeline_task`. Its `execute()` (in `src/pipeline/gpu_pipeline_task.cpp`,
-not this file) is where the doc's **per-task-device colocation contract** lives — before
-any operator runs, every input batch is locked-or-converted onto the task's reservation
-device (`prepare_for_processing` → `lock_or_prepare_batch`). That's why an operator can
-safely read `batches[0]->get_memory_space()` (you saw this caveat in the operator maps).
-`compute_task()` then runs every operator's `execute()` in order; `publish_output()` runs
-the sink's `sink()` to push results into downstream ports. Read the doc's "Per-task-device
-contract under SCHED-RR" section alongside — it's the authoritative four-layer writeup.
+`task` is a `gpu_pipeline_task` — **mapped in full in
+[`gpu_pipeline_task.md`](gpu_pipeline_task.md)**; the short version: its `execute()` is where
+the doc's **per-task-device colocation contract** lives — before any operator runs, every
+input batch is locked-or-converted onto the task's reservation device
+(`prepare_for_processing`). That's why an operator can safely read
+`batches[0]->get_memory_space()` (you saw this caveat in the operator maps). `compute_task()`
+then runs every operator's `execute()` in order; `publish_output()` runs the sink's `sink()`
+to push results into downstream ports. The same task also supplies the reservation estimate
+this executor reserves against (`get_estimated_reservation_size_info`, used at cpp 130/150) and
+the `create_rescheduled_task()` factory the OOM path calls at cpp 355 — see that map for both.
+Read the doc's "Per-task-device contract under SCHED-RR" section alongside — it's the
+authoritative four-layer writeup.
 
 ## OOM handling — the retry machine (cpp 274–374)
 
@@ -116,9 +120,9 @@ After a task succeeds:
 
 ## Types fundamental to *this* file
 
-- **`gpu_pipeline_task`** *(Sirius; `pipeline/gpu_pipeline_task.{hpp,cpp}`)* — the unit
-  this executor runs. Holds a `sirius_pipeline` (global state) + input batches, reservation,
-  `_start_operator_index`, `retry_count` (local state). **Think:** "one run of one
+- **`gpu_pipeline_task`** *(Sirius; mapped in [`gpu_pipeline_task.md`](gpu_pipeline_task.md))* —
+  the unit this executor runs. Holds a `sirius_pipeline` (global state) + input batches,
+  reservation, `_start_operator_index`, `retry_count` (local state). **Think:** "one run of one
   pipeline, resumable from an operator index after OOM."
 - **`oom_reschedule_exception`** *(Sirius)* — partial results + resume index. **Think:**
   "not a crash — a 'try me again from operator k after you free memory.'"

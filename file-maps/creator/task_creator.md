@@ -119,7 +119,9 @@ is next, whether the scan is drained) across the many tasks that operator spawns
   **Think:** "an operator's answer to 'can you run? if not, who feeds you?'"
 - **`duckdb_scan_task` / `parquet_scan_task` / `gpu_pipeline_task`** *(Sirius)* — the three
   concrete task kinds this file builds and dispatches. **Think:** "the creator's three
-  output shapes; scans go to the scan executor, everything else to the scheduler."
+  output shapes; scans go to the scan executor, everything else to the scheduler." The
+  `gpu_pipeline_task` is mapped in
+  [`../pipeline/gpu_pipeline_task.md`](../pipeline/gpu_pipeline_task.md).
 - **`can_create_more_tasks()` / `has_processed_all_tasks()`** *(Sirius; operator hooks)* —
   exhaustion signals (base throws; sources override). **Think:** "is this source out of
   work / are its tasks all done."

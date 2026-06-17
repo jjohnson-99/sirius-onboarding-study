@@ -46,7 +46,9 @@ SOURCES/OPS duckdb_scan_executor (scan in) · sirius_physical_hash_join (3-mode 
 [`task_creator`](creator/task_creator.md) decides *what* runs next (hint-chain recursion);
 [`task_scheduler`](pipeline/task_scheduler.md) decides *where/when* (pull-signal matcher,
 device preference); [`gpu_pipeline_executor`](pipeline/gpu_pipeline_executor.md) (one per
-GPU) *runs* it (reserve→dispatch, OOM retry). The host-I/O
+GPU) *dispatches* it (reserve→dispatch, OOM retry); and the
+[`gpu_pipeline_task`](pipeline/gpu_pipeline_task.md) itself is what *runs* — the
+per-task-device contract, the operator loop, and resumable OOM. The host-I/O
 [`duckdb_scan_executor`](op/scan/duckdb_scan_executor.md) is the source-side sibling.
 
 Following the arrows and `· Step N` tags walks Steps **0 → 1 → 3 → 4 → 5 → 9** in order.
@@ -75,7 +77,7 @@ For the *conceptual* version of the same trace (operators, scan, result included
 | **Plan** | [planner/sirius_physical_plan_generator](planner/sirius_physical_plan_generator.md) (dispatcher), [planner/plan-builders](planner/plan-builders.md) (per-node builders + `from_duckdb` call sites), [aggregate](planner/sirius_plan_aggregate.md) + [comparison_join](planner/sirius_plan_comparison_join.md) (heavyweight builders) |
 | **Operators** | [op/sirius_physical_operator](op/sirius_physical_operator.md) (base), [limit](op/sirius_physical_limit.md), [duckdb_scan](op/sirius_physical_duckdb_scan.md), [ungrouped_aggregate](op/sirius_physical_ungrouped_aggregate.md), [grouped_aggregate](op/sirius_physical_grouped_aggregate.md), [top_n](op/sirius_physical_top_n.md), [partition](op/sirius_physical_partition.md), [hash_join](op/sirius_physical_hash_join.md) |
 | **Expressions** | [expression/ast](expression/ast.md) (the `sirius::ast::node` AST + `from_duckdb` — producer entry), [expression_executor/gpu_expression_executor](expression_executor/gpu_expression_executor.md) (FILTER/PROJECTION compute), [expression_executor/gpu_expression_translator](expression_executor/gpu_expression_translator.md) (mixed-join AST) |
-| **Scheduler tier** | [pipeline/task_scheduler](pipeline/task_scheduler.md) (where/when), [pipeline/gpu_pipeline_executor](pipeline/gpu_pipeline_executor.md) (per-GPU run), [creator/task_creator](creator/task_creator.md) (what runs next) |
+| **Scheduler tier** | [pipeline/task_scheduler](pipeline/task_scheduler.md) (where/when), [pipeline/gpu_pipeline_executor](pipeline/gpu_pipeline_executor.md) (per-GPU dispatch), [pipeline/gpu_pipeline_task](pipeline/gpu_pipeline_task.md) (the resumable task it runs), [creator/task_creator](creator/task_creator.md) (what runs next) |
 | **Scan** | [op/scan/duckdb_scan_executor](op/scan/duckdb_scan_executor.md) (host-I/O scan executor + cache) |
 | **Memory & degradation** | [memory/sirius_memory_reservation_manager](memory/sirius_memory_reservation_manager.md) (tiers/reservations), [downgrade/downgrade_executor](downgrade/downgrade_executor.md) (spilling), [fallback](fallback.md) (CPU fallback) |
 
