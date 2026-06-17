@@ -34,26 +34,27 @@ The whole executor is one method, `manager_loop()` (cpp 91), running on a dedica
 thread. The shape (matches the doc's pseudo-loop):
 
 ```
-manager_loop()                                              :91   ◀─ entry: one per GPU, on its own thread
-                                                                  (base itask_executor::start() spawns it)
-└─ loop while _running:                                     :98
-   ├─ slot = _bounded_pool->reserve()      block until a worker SLOT is free (RAII)     :99
-   ├─ _task_request_publisher.send(device_ready)   tell the scheduler "I can take work" :112
-   ├─ task = _task_queue.pop()              block until the scheduler hands me a task    :116
-   ├─ reservation = _memory_space->make_reservation(bytes)                              :150
-   │     └─ short by N & downgrade set ─▶ request_downgrade() to spill, then retry :160 / :209
-   ├─ consumers = gpu_task->get_output_consumers()   (captured now, used by the worker) :261
-   ├─ stream = _stream_pool.acquire_stream()          one CUDA stream per worker        :263
-   └─ _bounded_pool->dispatch(std::move(slot), lambda)                                  :265
+manager_loop()                                  :91     ◀─ entry: one per GPU, on its own thread
+                                                          (base itask_executor::start() spawns it)
+└─ loop while _running:                          :98
+   ├─ slot = _bounded_pool->reserve()            :99     block until a worker SLOT is free (RAII)
+   ├─ _task_request_publisher.send(device_ready) :112    tell the scheduler "I can take work"
+   ├─ task = _task_queue.pop()                    :116    block until the scheduler hands me a task
+   ├─ reservation = make_reservation(bytes)       :150    reserve GPU memory for the task
+   │     └─ request_downgrade() on shortfall     :160    spill, then retry the reservation  (:209)
+   ├─ consumers = gpu_task->get_output_consumers() :261   captured now, used by the worker lambda
+   ├─ stream = _stream_pool.acquire_stream()      :263    one CUDA stream per worker
+   └─ _bounded_pool->dispatch(std::move(slot), lambda)  :265
             ─── lambda runs on a WORKER thread; the manager thread loops back here ───
-         ├─ task->execute(stream)                     ── the pipeline runs here         :273
-         │     └─ throws oom_reschedule_exception ─▶ OOM retry path (section below)      :274
-         ├─ on success: task.reset()                  releases the reservation          :395
-         ├─ check query completion BEFORE scheduling  (don't touch destroyed operators) :401
-         ├─ if !complete: task_creator->schedule(consumer) for each                     :416
-         └─ if  complete: completion_handler->mark_completed()  → unblocks engine.execute() :422
+         ├─ task->execute(stream)                 :273    ── the pipeline runs here
+         │     └─ throws oom_reschedule_exception :274    ─▶ OOM retry path (section below)
+         ├─ task.reset()                          :395    on success — releases the reservation
+         ├─ check query completion                :401    BEFORE scheduling (don't touch destroyed ops)
+         ├─ task_creator->schedule(consumer)      :416    for each consumer, if query not complete
+         └─ completion_handler->mark_completed()  :422    if complete ─▶ unblocks engine.execute()
 
-▲ exit: loop breaks when stop() clears _running, or the pool/channel/queue is interrupted :100/112/116
+▲ exit                                            :100/112/116   loop breaks when stop() clears
+                                                          _running, or pool/channel/queue interrupted
 ```
 
 Two layered concurrency limits are worth internalizing: the **`bounded_thread_pool`**
