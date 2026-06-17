@@ -48,9 +48,9 @@ initialize(plan)                              :143   ◀─ Step 4 entry
    └─ new_scheduled = …                        :386     ◀ the runnable pipelines
 
 execute()                                     :157   ══ LAUNCH + WAIT  (Step 5)
-├─ ctx->create_query(new_scheduled, …)        :168   ─▶ SiriusContext  (registers the query)
-├─ task_scheduler.start_query()               :173   ─▶ task_scheduler → future
-└─ future.get()                               :175     BLOCKS until the query completes
+├─ ctx->create_query(new_scheduled, …)        :168   ─▶ prepare_for_query: THE SETUP — make completion_handler, wire executors
+├─ task_scheduler.start_query()               :173   ─▶ THE TRIGGER — schedule(first scan); return the future
+└─ future.get()                               :175     BLOCKS this thread until completion_handler fires
       ⋯ on exception → drain_after_error()     :183     drains in-flight GPU tasks first
 
 get_result()                                  :132   ◀─ Step 9 (called by interface's fetch)
@@ -65,6 +65,17 @@ split. The `─▶` arrows are the engine's handoffs — to the **meta-pipeline*
 **`task_scheduler`** (Week 4), and **`SiriusContext`**; the engine itself just orchestrates.
 `construct_sirius_specific_operator` lives *inside* the converter (converter.cpp:61), where
 the local→merge operator pairs are born.
+
+> **`execute()` looks like it launches the engine; it really just *triggers* one already
+> running.** The scheduler's threads — the `management_eventloop`, one `gpu_pipeline_executor`
+> manager loop per GPU, the task_creator loop, the scan/downgrade executors — were all spawned
+> earlier at `SiriusContext::initialize()` and are sitting *blocked*, waiting for work.
+> `create_query` (→ `prepare_for_query`) does the per-query setup (creates the
+> `completion_handler`, wires it to the executors); `start_query()` does almost nothing —
+> schedules the first scan and returns the `future`; then `execute()` **blocks on
+> `future.get()`** until a worker thread signals completion. The full beginner-friendly
+> walkthrough (what each thread waits on, when it wakes) is in
+> [query startup & the thread model](../reference/explainers/query-startup-and-threads.md).
 
 ## The three verbs (call them in this order)
 

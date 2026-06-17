@@ -58,7 +58,9 @@ queries and data enter),
 (table format over it), **[client connections](client-connections.md)** (sessions & config
 scope), and
 **[MVCC](mvcc-concurrency-control.md)** (concurrency control — Sirius defers to DuckDB;
-optional). *Execution & dev:* **[types (DuckDB↔cuDF↔Sirius)](types-duckdb-cudf-sirius.md)**,
+optional). *Execution & dev:* **[query startup & the thread model](query-startup-and-threads.md)** (a
+threading-from-scratch walkthrough of how `start_query` triggers the standing scheduler threads),
+**[types (DuckDB↔cuDF↔Sirius)](types-duckdb-cudf-sirius.md)**,
 **[NULLs & validity](nulls-and-validity.md)**, and **[testing Sirius](testing-sirius.md)**.
 *Optimizations (mostly forward-looking in Sirius):*
 **[bloom filters](bloom-filters.md)** (probabilistic membership for join/scan pruning — the
@@ -97,6 +99,7 @@ grounded — the week is a *suggestion*, not a gate.
 | [testing-sirius.md](testing-sirius.md) | Week 3 | The two test systems — SQLLogicTest (`.test` end-to-end SQL) and Catch2 C++ unit tests — their formats, how to run just yours, and the first-PR loop (build → test → pre-commit → PR). |
 | [sorting-and-order-by.md](sorting-and-order-by.md) | Week 3 → 5 | Why sorting blocks; parallel sample sort (local sort → sample boundaries → **range**-partition → merge) vs the hash-partition of join/agg; TOP-N as partial sort; GPU radix sort; Sirius's 4-phase `ORDER_BY`/`SORT_SAMPLE`/`SORT_PARTITION`/`MERGE_SORT`. |
 | [morsel-driven-parallelism.md](morsel-driven-parallelism.md) | Week 4 | How analytical engines spread work across cores/GPUs — morsels + work-stealing vs. plan-time exchange operators — and how it maps onto Sirius's task scheduler/creator. |
+| [query-startup-and-threads.md](query-startup-and-threads.md) | Week 4 | Threading from scratch (blocking, queues, channels, promise/future) → how Sirius's standing threads (creator, scheduler `management_eventloop`, per-GPU executors) are spawned once at init and sit blocked, and how the tiny `start_query()` triggers them: what it does, hands back (the future), and the cross-thread cascade to completion. |
 | [hash-join-build-probe.md](hash-join-build-probe.md) | Week 1 → 5 | Why hash join beats nested loops, the build (small side → hash table) / probe (stream big side) split, join types, partitioning when it won't fit, the build-side pipeline breaker, and Sirius's cuDF join modes. |
 | [parquet-format.md](parquet-format.md) | Week 5 | The Parquet file layout (row groups → column chunks → pages → footer), why the footer enables cheap schema + column pruning + row-group skipping, and how Sirius decodes it on the GPU. |
 | [iceberg-table-format.md](iceberg-table-format.md) | Week 5 | Apache Iceberg: a metadata/table layer over Parquet files (snapshots, time travel, schema/partition evolution, row-level deletes via delete files/deletion vectors) and how Sirius's `ICEBERG_SCAN` applies the deletes on the GPU. |

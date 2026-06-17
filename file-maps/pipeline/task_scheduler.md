@@ -79,14 +79,37 @@ already-partitioned batches) valid **only** on one device; binding it there is a
 correctness requirement, not a perf tweak. Preference-less source tasks (scans) go to
 whichever device asks first — that's how multi-GPU load-balances now.
 
+## When does this loop start? (it's already running)
+
+A common confusion: `management_eventloop` is **not** started by `start_query()` or anything
+in the query path. It's spawned **once, at context construction** — `SiriusContext::initialize()`
+(`sirius_context.cpp`) calls `task_scheduler_->start()` (cpp 602), and `start()` does
+`std::thread(&task_scheduler::management_eventloop, this)` (cpp 117). The same `initialize()`
+also starts a whole set of **standing threads** that outlive any single query and sit *blocked*
+waiting for work:
+
+| Thread (loop) | Spawned at | Blocks on, until… |
+|---|---|---|
+| `management_eventloop` (this file) | `task_scheduler::start()` cpp 117 | `_task_request_channel.get()` — a `device_ready` / `task_available` event |
+| `gpu_pipeline_executor::manager_loop` — **one per GPU** | each `gpu_exec->start()` (from `task_scheduler::start()`, cpp 114) | sends `device_ready`, then `_task_queue.pop()` — a task |
+| `task_creator::manager_loop` | `task_creator_->start_thread_pool()` (`sirius_context.cpp:600`) | `_task_creation_queue.pop()` — a `schedule()` request |
+| scan executor / downgrade executor(s) | `scan_manager_->start()` / `executor->start()` (cpp 601 / 598) | their own queues |
+
+So by the time a query runs, the matcher thread is alive and parked. `start_query()` doesn't
+*enter* it — it feeds the `task_creator`, whose output eventually `schedule()`s a task here,
+which sends `task_available` on the channel and **wakes the already-running loop**. The full
+beginner-friendly walkthrough (what each thread waits on, when it wakes, what `start_query`
+hands back) is in
+[query startup & the thread model](../../reference/explainers/query-startup-and-threads.md).
+
 ## Query lifecycle — the methods the engine drives
 
 | Method (signature) | Line | Role |
 |---|---|---|
 | `task_scheduler(gpu_cfg, scan_cfg, mem_mgr, topology, downgrade)` | 40 | builds one `gpu_pipeline_executor` per GPU + the `duckdb_scan_executor`. |
-| `void start()` | 110 | start sub-executors, launch the management thread. |
-| `void prepare_for_query(query)` | 147 | drain leftovers, prep scan cache, populate `_priority_scans`. Resets the (deprecated) RR counter. |
-| `std::future<void> start_query()` | 171 | create the `completion_handler`, hand it to executors, schedule the initial scans, **return the future the engine blocks on**. |
+| `void start()` | 110 | **one-time, at context init** (not per query): start each GPU sub-executor, then `_management_thread = std::thread(&task_scheduler::management_eventloop, this)` (cpp 117). After this the matcher thread is alive and parked on the channel. |
+| `void prepare_for_query(query)` | 147 | **the per-query setup** (called from `SiriusContext::create_query`, *before* `start_query`): drain leftover tasks from the prior query (150), store `_query` (155), **create the `completion_handler` (157) and hand it to each GPU executor (161)**, reset the (deprecated) RR counter (168). |
+| `std::future<void> start_query()` | 171 | **the trigger — tiny.** Just `_task_creator->schedule(scans.front())` (176, drop the first scan in) and `return _completion_handler->get_awaitable()` (178) — the future the engine blocks on. *All* setup already happened in `prepare_for_query`; this only ignites the cascade. |
 | `void schedule(itask)` | 94 | push a pipeline task into `_task_queue`, signal `task_available`. Called by the GPU executor (downstream consumers) and the creator. |
 | `void terminate_query(exception_ptr)` | 181 | report error to the completion handler (unblocks the engine with an exception). |
 | `void drain_after_error()` | 187 | the careful multi-stage shutdown (stop creator → drain queue → drain GPU execs → drain scan exec → restart creator) so QueryEnd can destroy repositories without a use-after-free. |
