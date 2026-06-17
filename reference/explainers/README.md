@@ -42,7 +42,9 @@ than as part of the arc. *GPU systems* (how kernels run, are scheduled, and are 
 **[GPU warps & execution model](gpu-warps-and-execution.md)** and
 **[CUDA streams & async](cuda-streams-and-async.md)** (deeper dives on step 2's hardware),
 plus **[GPU memory & spilling](gpu-memory-and-spilling.md)** (how Sirius copes with limited
-GPU memory — reservations + tiered spill; Week 6 infrastructure), and **[cuDF](cudf.md)**
+GPU memory — reservations + tiered spill; Week 6 infrastructure), and **[NUMA](numa.md)**
+(host-RAM locality on multi-socket boxes — why pinned staging memory is placed per node), and
+**[cuDF](cudf.md)**
 (the GPU primitive library the operators actually call), and **[cuCascade](cucascade.md)**
 (the tiered-memory & data-flow library behind the batches/repositories), on
 **[RMM](rmm.md)** (the GPU allocation layer beneath both); zoom out with
@@ -78,6 +80,7 @@ grounded — the week is a *suggestion*, not a gate.
 | [gpu-warps-and-execution.md](gpu-warps-and-execution.md) | Week 1–2 → 5 | The GPU execution model in depth: the thread/warp/block/grid/SM hierarchy, SIMT, latency hiding by warp-switching, occupancy, divergence, the memory hierarchy & bank conflicts, warp-level primitives — plus a terminology glossary. Deep-dive companion to the previous one. |
 | [cuda-streams-and-async.md](cuda-streams-and-async.md) | Week 2 → 5–6 | The async model: streams as ordered queues, host/GPU concurrency, events & synchronization, copy/compute overlap (hiding PCIe), pinned memory, stream-ordered allocation (RMM) — and why every `execute()` takes a `cuda_stream_view`. |
 | [gpu-memory-and-spilling.md](gpu-memory-and-spilling.md) | Week 6 | Why GPU memory is the hard constraint; RMM pooling; the GPU→host→disk tiers (cuCascade); reservations as admission control; the downgrade executor (spilling); read-only locks; OOM retry & CPU fallback; NUMA/multi-GPU spaces. |
+| [numa.md](numa.md) | Week 5–6 | Non-Uniform Memory Access: why multi-socket servers have per-socket RAM (local fast / remote slow), why a bandwidth-bound DB co-locates thread+memory+GPU on one node, and Sirius's NUMA-aware pieces (`numa_small_pinned_mr`, per-node host spaces, `numa_id` copy hints, per-NUMA io_uring reactors). |
 | [cudf.md](cudf.md) | Week 2 | What cuDF/libcudf is (RAPIDS GPU DataFrame library), `cudf::column`/`table`, the relational primitives it provides, and how Sirius operators are mostly thin translators from DuckDB plan nodes to `cudf::` calls. |
 | [cucascade.md](cucascade.md) | Week 5 → 6 | The tiered-memory & data-flow library: `memory_space`/`Tier`, data representations, the `data_batch` (+ read-only locks), tier converters (spill/promote), and `shared_data_repository` — the residency counterpart to cuDF's compute. |
 | [rmm.md](rmm.md) | Week 2 → 6 | RMM (RAPIDS Memory Manager): the GPU allocation floor — memory resources, the pool MR, stream-ordered allocation, device buffers, and the `rmm::cuda_stream_view` in every `execute()`. Beneath cuDF & cuCascade. |

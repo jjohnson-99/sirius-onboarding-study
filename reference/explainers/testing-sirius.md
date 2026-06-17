@@ -5,7 +5,8 @@ Week 3 Days 4–5 is "ship something small" — and the most natural first contr
 de-risks the first PR.
 
 > **Prime around:** Week 3 (your first contribution). Commands are in `CLAUDE.md`'s Testing
-> section; conventions in `CONTRIBUTING.md`.
+> section; conventions in `CONTRIBUTING.md`. To run any of this you need a **Linux + NVIDIA**
+> box (not a Mac) — see [running Sirius on a cloud GPU](../running-sirius-on-a-cloud-gpu.md).
 
 ## Two kinds of tests
 
