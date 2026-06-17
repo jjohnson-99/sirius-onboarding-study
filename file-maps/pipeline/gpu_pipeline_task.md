@@ -34,7 +34,7 @@ notes it may be *further derived* (build/aggregation task subtypes) — which is
 
 ## The key idea first: one resumable run of one pipeline
 
-A `gpu_pipeline_task` is **one execution of one [`sirius_pipeline`](sirius_meta_pipeline.md)
+A `gpu_pipeline_task` is **one execution of one [`sirius_pipeline`](sirius_pipeline.md)
 over one slice of input**, and — crucially — it is **resumable**. Its state splits in two
 (the cuCascade global/local task-state pattern):
 

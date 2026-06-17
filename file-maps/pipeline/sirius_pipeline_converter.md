@@ -139,11 +139,12 @@ is moved back to the engine as `new_scheduled`.
 - **`sirius_meta_pipeline`** *(input; [`sirius_meta_pipeline.md`](sirius_meta_pipeline.md))*
   — the DuckDB-shaped pipeline tree this converter consumes. **Think:** "Step 4a's output =
   this file's input."
-- **`sirius_pipeline`** *(`sirius_pipeline.hpp`, 475 lines)* — the execution pipeline object:
-  an ordered `operators` list with `source`/`sink` aliases, `get_operators()`,
+- **`sirius_pipeline`** *(mapped in [`sirius_pipeline.md`](sirius_pipeline.md))* — the execution
+  pipeline object: an ordered `operators` list with `source`/`sink` aliases, `get_operators()`,
   `set_pipeline_id()`. **Think:** "the runnable unit the scheduler iterates" (you saw it as
   `pipeline->get_operators()` in [`gpu_pipeline_task`](gpu_pipeline_task.md), run by the
-  [executor](gpu_pipeline_executor.md)).
+  [executor](gpu_pipeline_executor.md)). This file's `sirius_pipeline_build_state` is the
+  *builder* for it.
 - **`pipeline_build_context` / `sirius_pipeline_build_state`** *(plan-time)* — config
   (`num_gpus`, `preserve_insertion_order`) + build bookkeeping threaded through 4a→4b.
   **Think:** "the scratch state for one query's construction."

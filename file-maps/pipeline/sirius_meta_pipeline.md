@@ -75,8 +75,8 @@ first/last operators (the invariant the executor relies on).
 - **`MetaPipelineType` `{REGULAR, JOIN_BUILD}`** *(this file)* — whether the shared sink is
   a join build (drives the build-before-probe ordering). **Think:** "is this the build side
   of a join?"
-- **`sirius_pipeline`** *(`sirius_pipeline.hpp`)* — the individual pipeline (ordered
-  operators, source/sink); see [`sirius_pipeline_converter.md`](sirius_pipeline_converter.md).
+- **`sirius_pipeline`** *(mapped in [`sirius_pipeline.md`](sirius_pipeline.md))* — the
+  individual pipeline (ordered operators, source/sink, completion bookkeeping).
   **Think:** "one source→sink chain."
 - **`sirius_pipeline_build_state` / `pipeline_build_context`** *(plan-time)* — bookkeeping
   (batch indices, dependencies) + config threaded through the build. **Think:** "the build's

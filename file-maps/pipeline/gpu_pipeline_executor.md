@@ -105,7 +105,9 @@ After a task succeeds:
    tasks that reference already-destroyed operators);
 3. if not complete: `task_creator->schedule(consumer)` for each
    ([`../creator/task_creator.md`](../creator/task_creator.md));
-4. if the sink is `RESULT_COLLECTOR` and the pipeline is finished:
+4. if the sink is `RESULT_COLLECTOR` and the pipeline is finished
+   (`pipeline->is_pipeline_finished()` — the flag set by the completion logic in
+   [`sirius_pipeline.md`](sirius_pipeline.md)):
    `completion_handler->mark_completed()` — the signal that unblocks `engine.execute()`.
 
 ## Methods (hpp)
