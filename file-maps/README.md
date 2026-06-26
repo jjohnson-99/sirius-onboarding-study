@@ -70,15 +70,21 @@ For the *conceptual* version of the same trace (operators, scan, result included
 The orchestration spine above stops at "sources feed the scheduler." This is the spine *inside*
 the scan source — the code-level companion to the
 [`scan-pipeline-and-filter-project`](../notes/walkthroughs/scan-pipeline-and-filter-project.md)
-walkthrough. The one framing to hold onto: **a `TABLE_SCAN` becomes one of two families at plan
-time, and the GPU family is a producer/consumer pair that never call each other — they meet at a
-queue.**
+walkthrough. The one framing to hold onto: **post-`#871` every `TABLE_SCAN` becomes a single
+unified `GPU_SCAN`, and that GPU path is a producer/consumer pair that never call each other —
+they meet at a queue.**
 
 ```
 TABLE_SCAN                                           [planner/sirius_plan_get — builds config,
-   │  pipeline converter rewrites the source          classifies pure-filter columns]
-   ├──► GPU_SCAN       GPU-native decode (the common path)
-   └──► DUCKDB_SCAN    CPU staging via a DuckDB table function (fallback)
+   │  split_table_scan_source (converter:360)         classifies pure-filter columns]
+   │  rewrites EVERY scan into GPU_SCAN:
+   ├─ parquet_scan / read_parquet → GPU_SCAN + parquet_gpu_ingestible
+   └─ seq_scan                    → GPU_SCAN + duckdb_native_gpu_ingestible
+        (any other function → throws "Unsupported scan function")
+
+   ✗ DUCKDB_SCAN / ICEBERG_SCAN / GPU_PARQUET_SCAN  — pre-#871 refined operator subtypes;
+     no longer produced (see "vestigial" note below). The super-sirius/scan.md mermaid still
+     shows these because that doc predates #871.
 ```
 
 ### GPU family (`GPU_SCAN`) — producer ──▶ queue ──▶ consumer
@@ -116,7 +122,7 @@ planner's `projection_ids` becomes. That plan, plus the `filter_state` an ingest
 `materialize_table`, is what lets the consumer **skip** `post_filter_and_project` when the reader
 already filtered+projected (`ROW_FILTERED_AND_PROJECTED`).
 
-### CPU family (`DUCKDB_SCAN`) — orthogonal, no ingestible
+### CPU family (`DUCKDB_SCAN`) — ⚠️ vestigial post-`#871`
 
 ```
 sirius_physical_duckdb_scan (source)                          [op/sirius_physical_duckdb_scan]
@@ -125,10 +131,15 @@ sirius_physical_duckdb_scan (source)                          [op/sirius_physica
                                                               [op/scan/duckdb_scan_task]
 ```
 
-No scan_manager, no ingestible, no split_connector. Filters are **withheld** from DuckDB
-(`nullptr`) and applied downstream on GPU. Don't conflate `GPU_SCAN` (ingestible) with
-`DUCKDB_SCAN` (this) — the near-identical name `duckdb_native_gpu_ingestible` belongs to the
-*GPU* family, not here.
+This *was* the CPU-staging path: no scan_manager, no ingestible, no split_connector; filters
+withheld from DuckDB (`nullptr`) and applied downstream on GPU. **It is no longer reachable** —
+`sirius_physical_duckdb_scan` is built only by `construct_sirius_specific_operator`
+(`sirius_engine.cpp:231`, zero callers; converter free-fn `:85`, called only with agg/distinct
+merge ops, never `TABLE_SCAN`), and `split_table_scan_source` routes `seq_scan` to the **GPU**
+family instead. Don't conflate `GPU_SCAN` (live) with `DUCKDB_SCAN` (vestigial) — and note the
+near-identical name `duckdb_native_gpu_ingestible` belongs to the *GPU* family, not here. Kept in
+the maps as the foil for that naming trap, not as a live alternative. See
+[`duckdb_scan_task`](op/scan/duckdb_scan_task.md) for the full vestigial note.
 
 **Reading order** (mirrors data flow): the planner ([`sirius_plan_get`](planner/sirius_plan_get.md))
 → the layout ([`scan_plan`](op/scan/scan_plan.md)) → producer
@@ -149,7 +160,7 @@ walkthrough's mermaid diagram shows the same flow with the runtime (not reading)
 | **Operators** | [op/sirius_physical_operator](op/sirius_physical_operator.md) (base), [limit](op/sirius_physical_limit.md), [duckdb_scan](op/sirius_physical_duckdb_scan.md), [table_scan](op/sirius_physical_table_scan.md) (generic scan; config carrier + bypassed filter/project copy), [ungrouped_aggregate](op/sirius_physical_ungrouped_aggregate.md), [grouped_aggregate](op/sirius_physical_grouped_aggregate.md), [top_n](op/sirius_physical_top_n.md), [partition](op/sirius_physical_partition.md), [hash_join](op/sirius_physical_hash_join.md) |
 | **Expressions** | [expression/ast](expression/ast.md) (the `sirius::ast::node` AST + `from_duckdb` — producer entry), [expression_executor/gpu_expression_executor](expression_executor/gpu_expression_executor.md) (FILTER/PROJECTION compute), [expression_executor/gpu_expression_translator](expression_executor/gpu_expression_translator.md) (mixed-join AST) |
 | **Scheduler tier** | [pipeline/task_scheduler](pipeline/task_scheduler.md) (where/when), [pipeline/gpu_pipeline_executor](pipeline/gpu_pipeline_executor.md) (per-GPU dispatch), [pipeline/gpu_pipeline_task](pipeline/gpu_pipeline_task.md) (the resumable task it runs), [pipeline/sirius_pipeline](pipeline/sirius_pipeline.md) (the runnable unit + completion bookkeeping), [creator/task_creator](creator/task_creator.md) (what runs next) |
-| **Scan** | [op/scan/sirius_gpu_scan_operator](op/scan/sirius_gpu_scan_operator.md) (unified `GPU_SCAN` source: pull splits → drive ingestible), [op/scan/duckdb_scan_executor](op/scan/duckdb_scan_executor.md) (host-I/O scan executor + cache), [op/scan/duckdb_scan_task](op/scan/duckdb_scan_task.md) (CPU-staging scan task: DuckDB table function → pinned host batch), [op/scan/duckdb_native_gpu_ingestible](op/scan/duckdb_native_gpu_ingestible.md) (native decoder ingestible + `post_filter_and_project`), [op/scan/parquet_gpu_ingestible](op/scan/parquet_gpu_ingestible.md) (parquet fresh-read ingestible; filter in `materialize_table`, assembly-only post), [op/scan/pinned_table_gpu_ingestible](op/scan/pinned_table_gpu_ingestible.md) (pinned-cache ingestible; GPU/HOST tier, skips `materialize_table`), [op/scan/scan_plan](op/scan/scan_plan.md) (read/output layout + pure-filter classification) |
+| **Scan** | [op/scan/sirius_gpu_scan_operator](op/scan/sirius_gpu_scan_operator.md) (unified `GPU_SCAN` source: pull splits → drive ingestible), [op/scan/duckdb_scan_executor](op/scan/duckdb_scan_executor.md) (host-I/O scan executor + cache), [op/scan/duckdb_scan_task](op/scan/duckdb_scan_task.md) (CPU-staging scan task: DuckDB table function → pinned host batch; **vestigial post-`#871`**), [op/scan/duckdb_native_gpu_ingestible](op/scan/duckdb_native_gpu_ingestible.md) (native decoder ingestible + `post_filter_and_project`), [op/scan/parquet_gpu_ingestible](op/scan/parquet_gpu_ingestible.md) (parquet fresh-read ingestible; filter in `materialize_table`, assembly-only post), [op/scan/pinned_table_gpu_ingestible](op/scan/pinned_table_gpu_ingestible.md) (pinned-cache ingestible; GPU/HOST tier, skips `materialize_table`), [op/scan/scan_plan](op/scan/scan_plan.md) (read/output layout + pure-filter classification) |
 | **Scan-manager** | [scan_manager/sirius_scan_manager](scan_manager/sirius_scan_manager.md) (split-production engine: per-query ingestible build + fire-and-forget split workers; owns IO backends) |
 | **Memory & degradation** | [memory/sirius_memory_reservation_manager](memory/sirius_memory_reservation_manager.md) (tiers/reservations), [downgrade/downgrade_executor](downgrade/downgrade_executor.md) (spilling), [fallback](fallback.md) (CPU fallback) |
 

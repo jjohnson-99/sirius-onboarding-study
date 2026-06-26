@@ -99,8 +99,10 @@ The connector only ever carries these two `operator_data` types; `execute` `dyna
   keep-set (`projection_ids` → `output_arity`) the ingestible applies originates here.
 - **Bypassed sibling** ([`../sirius_physical_table_scan.md`](../sirius_physical_table_scan.md)):
   the pre-`#871` `execute()` copy this operator superseded — read it only to recognize it's dead.
-- **Other scan family** ([`duckdb_scan_task.md`](duckdb_scan_task.md)): the CPU-staging
-  `DUCKDB_SCAN` path — orthogonal; don't conflate `GPU_SCAN` (here) with `DUCKDB_SCAN` (there).
+- **Superseded scan family** ([`duckdb_scan_task.md`](duckdb_scan_task.md)): the pre-`#871`
+  CPU-staging `DUCKDB_SCAN` path — **vestigial**, no longer produced by the converter (every
+  `TABLE_SCAN`, including `seq_scan`, now becomes this `GPU_SCAN`). Don't conflate `GPU_SCAN`
+  (live, here) with `DUCKDB_SCAN` (vestigial, there).
 
 ## Takeaway
 

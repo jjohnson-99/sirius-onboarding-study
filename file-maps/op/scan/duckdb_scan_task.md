@@ -5,16 +5,35 @@ The runnable **unit of work** for the *DuckDB-table-function* scan path: it pull
 allocation, emits a `data_batch`, and self-reschedules a continuation task until the source
 drains. ~638 lines (impl) + a header that defines its three state classes.
 
-This is the **CPU-staging** scan family — **not** the GPU-native one. Keep the two straight:
+> ## ⚠️ VESTIGIAL post-`#871` — not produced by the live converter
+>
+> This is the **CPU-staging** scan path, driven by the `sirius_physical_duckdb_scan` (`DUCKDB_SCAN`)
+> source. **Nothing in the live pipeline builds that source anymore.** It is constructed only by
+> `construct_sirius_specific_operator` (`sirius_engine.cpp:231` — **zero callers**; converter
+> free-fn `sirius_pipeline_converter.cpp:85` — called only with agg/distinct merge ops at
+> `:653/:670/:906`, **never with a `TABLE_SCAN`**). The live scan rewriter
+> `split_table_scan_source` (`:360`) turns **every** `TABLE_SCAN` — parquet *and* `seq_scan` —
+> into a `GPU_SCAN` (`sirius_gpu_scan_operator` + `gpu_ingestible`). `duckdb_scan_task_global_state`
+> (the entry to this family) is never constructed from a live path, and `get_scan_executor()` is
+> called only from inside this dead family (`duckdb_scan_task.cpp:51`).
+>
+> Same status as [`../sirius_physical_table_scan.md`](../sirius_physical_table_scan.md)'s
+> `execute()`: pre-`#871` code that still compiles but is bypassed. Read it to understand the
+> *old* CPU-staging design, not the current control flow. The map below describes that code
+> faithfully; just don't expect it to run.
 
-| Family | Source operator | Driver | This file? |
+This was the **CPU-staging** scan family — distinct from the GPU-native one. Keep the names
+straight (the collision below is why this map exists):
+
+| Family | Source operator | Driver | Status |
 |---|---|---|---|
-| **DuckDB-native (CPU staging)** | `sirius_physical_duckdb_scan` (`DUCKDB_SCAN`) | `duckdb_scan_executor` thread pool | **yes** — `duckdb_scan_task` is its task |
-| **GPU-native decode** | `sirius_gpu_scan_operator` (`GPU_SCAN`) | `scan_manager` + `gpu_ingestible` | no — see [`duckdb_native_gpu_ingestible.md`](duckdb_native_gpu_ingestible.md) / [`../../scan_manager/sirius_scan_manager.md`](../../scan_manager/sirius_scan_manager.md) |
+| **DuckDB-native (CPU staging)** | `sirius_physical_duckdb_scan` (`DUCKDB_SCAN`) | `duckdb_scan_executor` thread pool | **vestigial** — `duckdb_scan_task` (this file) is its task |
+| **GPU-native decode** | `sirius_gpu_scan_operator` (`GPU_SCAN`) | `scan_manager` + `gpu_ingestible` | **live** — see [`duckdb_native_gpu_ingestible.md`](duckdb_native_gpu_ingestible.md) / [`../../scan_manager/sirius_scan_manager.md`](../../scan_manager/sirius_scan_manager.md) |
 
-> Note the near-collision: *`duckdb_native_gpu_ingestible`* (GPU family) vs *`duckdb_scan_task`*
-> (this, CPU family). "DuckDB" appears in both because both ultimately read a DuckDB-registered
-> table; the split is **who decodes** — DuckDB's CPU table function here, cuDF on-GPU there.
+> Note the near-collision: *`duckdb_native_gpu_ingestible`* (GPU family, **live**) vs
+> *`duckdb_scan_task`* (this, CPU family, **vestigial**). "DuckDB" appears in both because both
+> ultimately read a DuckDB-registered table; the split is **who decodes** — DuckDB's CPU table
+> function here, cuDF on-GPU there. The *live* path is always the GPU one today.
 
 > Paths relative to the Sirius repo root. Lines as of 2026-06-26 — re-grep if the file moved.
 
@@ -93,14 +112,16 @@ duckdb_scan_executor (thread pool)
 - **Source operator** ([`../sirius_physical_duckdb_scan.md`](../sirius_physical_duckdb_scan.md)):
   the `DUCKDB_SCAN` that this task reads config from (`function`, `scanned_types`, ids).
 - **GPU-native sibling** ([`duckdb_native_gpu_ingestible.md`](duckdb_native_gpu_ingestible.md)):
-  the *other* scan family — contrast it to keep "who decodes" straight (DuckDB CPU here, cuDF
-  on-GPU there). The filter/project ticket lives in that family, **not** this one (this path
-  withholds filters from DuckDB and applies them downstream).
+  the **live** scan path that *superseded* this one — contrast it to keep "who decodes" straight
+  (DuckDB CPU here, cuDF on-GPU there). The filter/project ticket lives in that family, **not**
+  this one (this path withholds filters from DuckDB and applies them downstream).
 
 ## Takeaway
 
-`duckdb_scan_task` is the CPU-staging scan worker: pump a DuckDB table function, pack chunks into
-a pinned host batch, publish, and re-queue a continuation until drained. It is the task layer of
-the `DUCKDB_SCAN` family — orthogonal to the `GPU_SCAN`/ingestible/scan_manager family. Read with
-[`duckdb_scan_executor.md`](duckdb_scan_executor.md) (its driver) and
+`duckdb_scan_task` *was* the CPU-staging scan worker: pump a DuckDB table function, pack chunks
+into a pinned host batch, publish, and re-queue a continuation until drained. **Post-`#871` it is
+vestigial** — the converter no longer builds the `DUCKDB_SCAN` source that drives it; every
+`TABLE_SCAN` becomes a `GPU_SCAN`. Read this map to understand the old CPU-staging design (and as
+the foil for "duckdb-native means GPU here"), not the live control flow. See
+[`duckdb_scan_executor.md`](duckdb_scan_executor.md) (its old driver) and
 [`../sirius_physical_duckdb_scan.md`](../sirius_physical_duckdb_scan.md) (its source operator).
