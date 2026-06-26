@@ -25,10 +25,11 @@ everything.
 
 ## Where this sits
 
-This is the **fifth executor** in the engine (alongside the per-GPU
-[`../pipeline/gpu_pipeline_executor.md`](../pipeline/gpu_pipeline_executor.md), the
-[`../op/scan/duckdb_scan_executor.md`](../op/scan/duckdb_scan_executor.md), and the
-[`task_scheduler`](../pipeline/task_scheduler.md))—but note it does **not** inherit
+This is another executor in the engine (alongside the per-GPU
+[`../pipeline/gpu_pipeline_executor.md`](../pipeline/gpu_pipeline_executor.md) and the
+[`task_scheduler`](../pipeline/task_scheduler.md); the
+[`../op/scan/duckdb_scan_executor.md`](../op/scan/duckdb_scan_executor.md) is vestigial
+post-`#871` and no longer built)—but note it does **not** inherit
 `itask_executor`; it's a standalone class with its own thread(s) + pool + request queue.
 
 The critical interaction: when `gpu_pipeline_executor`'s `make_reservation()` comes up

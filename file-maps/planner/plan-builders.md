@@ -37,7 +37,7 @@ The output is the `sirius_physical_operator` tree that the engine then hands to 
 
 | Builder file | DuckDB logical node | Sirius operator(s) produced | `from_duckdb`? | Map |
 |---|---|---|---|---|
-| `sirius_plan_get.cpp` (265) | `LOGICAL_GET` | `table_scan` (+ pushed-down `filter`) | ✓ (table filters) | [scan](../op/sirius_physical_duckdb_scan.md) |
+| `sirius_plan_get.cpp` (265) | `LOGICAL_GET` | `table_scan` (+ pushed-down `filter`); post-`#871` rewritten to `GPU_SCAN` | ✓ (table filters) | [get builder](sirius_plan_get.md) · [table_scan](../op/sirius_physical_table_scan.md) · live source [GPU_SCAN](../op/scan/sirius_gpu_scan_operator.md) |
 | `sirius_plan_filter.cpp` (90) | `LOGICAL_FILTER` | `filter` | ✓ (predicate) | [filter→executor](../expression_executor/gpu_expression_executor.md) |
 | `sirius_plan_projection.cpp` (85) + `…_projection_utils.cpp` (182) | `LOGICAL_PROJECTION` | `projection` | ✓ (select list) | [executor](../expression_executor/gpu_expression_executor.md) |
 | `sirius_plan_aggregate.cpp` (412) | `LOGICAL_AGGREGATE_AND_GROUP_BY` | `grouped_aggregate` *or* `ungrouped_aggregate` | ✓ (group keys, agg args) | **own map: [sirius_plan_aggregate](sirius_plan_aggregate.md)** |

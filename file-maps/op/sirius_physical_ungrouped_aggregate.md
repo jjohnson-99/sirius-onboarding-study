@@ -92,7 +92,8 @@ because the GPU lacks an INT128 accumulator — the kind of footgun worth rememb
 
 ## How it closes the loop
 
-For the trace query the full operator chain is: **DUCKDB_SCAN** (read `lineitem`) →
+For the trace query the full operator chain is: **GPU_SCAN** (read `lineitem`; post-`#871` —
+this was `DUCKDB_SCAN` pre-`#871`) →
 [grouped] **aggregate (local)** (partial SUM per batch) → **PARTITION/merge** (combine)
 → **RESULT_COLLECTOR** (materialize) → back to `sirius_interface::fetch_result_internal`
 → DuckDB. Reading this file you can now point at where the `SUM(l_quantity)` is

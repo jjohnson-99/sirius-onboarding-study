@@ -38,8 +38,8 @@ SCHEDULER   task_creator (what runs) · task_scheduler (where/when) · gpu_pipel
                                                                   [Week 4 — see maps below]
         │
         ▼   sources feed the scheduler; the join is the capstone consumer
-SOURCES/OPS duckdb_scan_executor (scan in) · sirius_physical_hash_join (3-mode join)
-                                                                  [Week 5]
+SOURCES/OPS scan_manager + sirius_gpu_scan_operator (GPU scan in) · sirius_physical_hash_join (3-mode join)
+                                                                  [Week 5 — see "The scan spine" below]
 ```
 
 **Scheduler-tier roles** (Week 4): three components, three jobs —
@@ -48,8 +48,10 @@ SOURCES/OPS duckdb_scan_executor (scan in) · sirius_physical_hash_join (3-mode 
 device preference); [`gpu_pipeline_executor`](pipeline/gpu_pipeline_executor.md) (one per
 GPU) *dispatches* it (reserve→dispatch, OOM retry); and the
 [`gpu_pipeline_task`](pipeline/gpu_pipeline_task.md) itself is what *runs* — the
-per-task-device contract, the operator loop, and resumable OOM. The host-I/O
-[`duckdb_scan_executor`](op/scan/duckdb_scan_executor.md) is the source-side sibling.
+per-task-device contract, the operator loop, and resumable OOM. The source side is the
+[`scan_manager`](scan_manager/sirius_scan_manager.md) + [`sirius_gpu_scan_operator`](op/scan/sirius_gpu_scan_operator.md)
+(see "The scan spine" below). *(The host-I/O [`duckdb_scan_executor`](op/scan/duckdb_scan_executor.md)
+was the pre-`#871` source-side sibling — now vestigial, no longer built by the scheduler.)*
 
 Following the arrows and `· Step N` tags walks Steps **0 → 1 → 3 → 4 → 5 → 9** in order.
 This is just the connective overview — the per-function detail lives in each map's own
@@ -157,7 +159,7 @@ walkthrough's mermaid diagram shows the same flow with the runtime (not reading)
 | **Pipeline construction (Step 4)** | [pipeline/sirius_meta_pipeline](pipeline/sirius_meta_pipeline.md) (4a build), [pipeline/sirius_pipeline_converter](pipeline/sirius_pipeline_converter.md) (4b–4d split/wire) |
 | **Ownership** | [sirius_context](sirius_context.md) |
 | **Plan** | [planner/sirius_physical_plan_generator](planner/sirius_physical_plan_generator.md) (dispatcher), [planner/plan-builders](planner/plan-builders.md) (per-node builders + `from_duckdb` call sites), [aggregate](planner/sirius_plan_aggregate.md) + [comparison_join](planner/sirius_plan_comparison_join.md) (heavyweight builders), [get](planner/sirius_plan_get.md) (`LOGICAL_GET` scan builder + pure-filter classification) |
-| **Operators** | [op/sirius_physical_operator](op/sirius_physical_operator.md) (base), [limit](op/sirius_physical_limit.md), [duckdb_scan](op/sirius_physical_duckdb_scan.md), [table_scan](op/sirius_physical_table_scan.md) (generic scan; config carrier + bypassed filter/project copy), [ungrouped_aggregate](op/sirius_physical_ungrouped_aggregate.md), [grouped_aggregate](op/sirius_physical_grouped_aggregate.md), [top_n](op/sirius_physical_top_n.md), [partition](op/sirius_physical_partition.md), [hash_join](op/sirius_physical_hash_join.md) |
+| **Operators** | [op/sirius_physical_operator](op/sirius_physical_operator.md) (base), [limit](op/sirius_physical_limit.md), [duckdb_scan](op/sirius_physical_duckdb_scan.md) (**vestigial post-`#871`**), [table_scan](op/sirius_physical_table_scan.md) (generic scan; config carrier + bypassed filter/project copy), [ungrouped_aggregate](op/sirius_physical_ungrouped_aggregate.md), [grouped_aggregate](op/sirius_physical_grouped_aggregate.md), [top_n](op/sirius_physical_top_n.md), [partition](op/sirius_physical_partition.md), [hash_join](op/sirius_physical_hash_join.md) |
 | **Expressions** | [expression/ast](expression/ast.md) (the `sirius::ast::node` AST + `from_duckdb` — producer entry), [expression_executor/gpu_expression_executor](expression_executor/gpu_expression_executor.md) (FILTER/PROJECTION compute), [expression_executor/gpu_expression_translator](expression_executor/gpu_expression_translator.md) (mixed-join AST) |
 | **Scheduler tier** | [pipeline/task_scheduler](pipeline/task_scheduler.md) (where/when), [pipeline/gpu_pipeline_executor](pipeline/gpu_pipeline_executor.md) (per-GPU dispatch), [pipeline/gpu_pipeline_task](pipeline/gpu_pipeline_task.md) (the resumable task it runs), [pipeline/sirius_pipeline](pipeline/sirius_pipeline.md) (the runnable unit + completion bookkeeping), [creator/task_creator](creator/task_creator.md) (what runs next) |
 | **Scan** | [op/scan/sirius_gpu_scan_operator](op/scan/sirius_gpu_scan_operator.md) (unified `GPU_SCAN` source: pull splits → drive ingestible), [op/scan/duckdb_scan_executor](op/scan/duckdb_scan_executor.md) (host-I/O scan executor + cache), [op/scan/duckdb_scan_task](op/scan/duckdb_scan_task.md) (CPU-staging scan task: DuckDB table function → pinned host batch; **vestigial post-`#871`**), [op/scan/duckdb_native_gpu_ingestible](op/scan/duckdb_native_gpu_ingestible.md) (native decoder ingestible + `post_filter_and_project`), [op/scan/parquet_gpu_ingestible](op/scan/parquet_gpu_ingestible.md) (parquet fresh-read ingestible; filter in `materialize_table`, assembly-only post), [op/scan/pinned_table_gpu_ingestible](op/scan/pinned_table_gpu_ingestible.md) (pinned-cache ingestible; GPU/HOST tier, skips `materialize_table`), [op/scan/scan_plan](op/scan/scan_plan.md) (read/output layout + pure-filter classification) |

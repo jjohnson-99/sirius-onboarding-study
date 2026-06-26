@@ -10,6 +10,21 @@ Read with `docs/super-sirius/scan.md`; prime with
 > file (note the **three** `../` — this map is three levels deep, mirroring
 > `src/op/scan/`). Lines accurate as of 2026-06-15 — re-grep.
 
+> ## ⚠️ VESTIGIAL post-`#871` — this executor is no longer driven (re-verified 2026-06-26)
+>
+> `duckdb_scan_executor` + [`duckdb_scan_task`](duckdb_scan_task.md) are the **CPU-staging** scan
+> path, driven by the `DUCKDB_SCAN` source operator
+> ([`../sirius_physical_duckdb_scan.md`](../sirius_physical_duckdb_scan.md)). That source is **no
+> longer produced** — `split_table_scan_source` (`converter:360`) routes every `TABLE_SCAN`
+> (parquet *and* `seq_scan`) to a `GPU_SCAN`, and `construct_sirius_specific_operator` (the only
+> builder of `DUCKDB_SCAN`) is dead for scans (engine member `sirius_engine.cpp:231` has **zero
+> callers**; converter free-fn is called only with agg/distinct ops). The executor isn't even
+> instantiated (only `sirius_config::get_duckdb_scan_executor_config()` survives), and
+> [`task_creator`](../../creator/task_creator.md) no longer has a `DUCKDB_SCAN`/`duckdb_scan_task`
+> branch at all. The **live** source end is now [`sirius_scan_manager`](../../scan_manager/sirius_scan_manager.md)
+> (producer) + [`sirius_gpu_scan_operator`](sirius_gpu_scan_operator.md) (consumer) +
+> `gpu_ingestible`. Read this map for the *old* host-staging design, not the current data flow.
+
 ## Scope note — what to read vs. skim
 
 `docs/super-sirius/scan.md` is the largest doc and describes **four** scan paths
@@ -26,7 +41,8 @@ if a task takes you there).
 > `sirius_gpu_scan_operator.cpp` + `{parquet,duckdb_native,pinned_table}_gpu_ingestible.cpp`
 > (and `row_group_metadata.hpp`); the native-metadata walk was parallelized/typed (`#895`,
 > `#936`). **This map's subject file — `duckdb_scan_executor.cpp` — did *not* change**, so the
-> executor + DuckDB-scan-task content below is intact. But the "four scan paths" framing and
+> executor + DuckDB-scan-task content below is intact **as a description of the code** — but that
+> code is now **unreachable** (see the VESTIGIAL banner above). The "four scan paths" framing and
 > the GPU-parquet pointers now refer to the unified operator; treat scan-path names as
 > approximate until `scan.md` is refreshed. Full diff in
 > [`../../../reports/post-pull-review-2026-06-15.md`](../../../reports/post-pull-review-2026-06-15.md).
@@ -34,7 +50,9 @@ if a task takes you there).
 ## Where this sits
 
 The scan subsystem is the **source** end of every query — Step 6 of the execution flow,
-the thing that feeds the operators you've been reading. `duckdb_scan_executor` is the
+the thing that feeds the operators you've been reading. (Post-`#871` that role is the
+scan_manager + `sirius_gpu_scan_operator`; `duckdb_scan_executor` below is the vestigial
+predecessor — see the banner.) `duckdb_scan_executor` is the
 **third executor** in the tier (alongside the per-GPU
 [`../../pipeline/gpu_pipeline_executor.md`](../../pipeline/gpu_pipeline_executor.md) and the
 downgrade executor): all three inherit `itask_executor`. The
@@ -103,9 +121,11 @@ header carries a load-bearing **FIX-01** comment (hpp 191–198): per-GPU stream
 replaced a single GPU-0-bound pool that caused a post-ship `cudaErrorInvalidValue` — a
 concrete example of "a CUDA stream is bound to the device whose context created it."
 
-## The scan-task flow (where data actually enters) — `duckdb_scan_task`
+## The scan-task flow (the *old* host-staging read path) — `duckdb_scan_task`
 
-The executor runs tasks; the task does the reading (`src/op/scan/duckdb_scan_task.cpp`):
+*(Pre-`#871`; vestigial — the live read path is the [`gpu_ingestible`](duckdb_native_gpu_ingestible.md)
+driven by [`sirius_gpu_scan_operator`](sirius_gpu_scan_operator.md).)* The executor ran tasks; the
+task did the reading (`src/op/scan/duckdb_scan_task.cpp`):
 1. `get_next_chunk()` — pull a `DataChunk` from the DuckDB table function;
 2. `chunk_fits()` — does it fit the pre-allocated column builders?
 3. `process_chunk()` — write columns into **column builders** (fixed-width: data+validity;

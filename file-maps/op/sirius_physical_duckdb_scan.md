@@ -2,21 +2,35 @@
 
 Companion for Week 2, **Days 4–5** of [`onboarding-path.md`](../../onboarding-path.md).
 Tagged **tiny** (~130 lines, almost all constructor). Read with the `DUCKDB_SCAN`
-entry in `docs/super-sirius/operators.md`. This is the **source** operator for the
-target query's `lineitem` scan.
+entry in `docs/super-sirius/operators.md`.
 
-> Paths relative to the Sirius repo root. Lines as of 2026-06-10.
+> ## ⚠️ VESTIGIAL post-`#871` — no longer the live `lineitem` source
+>
+> Re-verified 2026-06-26: this operator is **not produced by any live path**. The live scan
+> rewriter `split_table_scan_source` (`converter:360`) turns **every** `TABLE_SCAN` — including
+> `seq_scan` over a base table — into a `GPU_SCAN` (`sirius_gpu_scan_operator` +
+> `duckdb_native_gpu_ingestible`), *not* a `DUCKDB_SCAN`. `sirius_physical_duckdb_scan` is built
+> only by `construct_sirius_specific_operator` — engine member `sirius_engine.cpp:231` (**zero
+> callers**) and converter free-fn `converter.cpp:85` (called only with agg/distinct merge ops at
+> `:653/:670/:906`, **never `TABLE_SCAN`**). So for `SELECT … FROM lineitem …` today the source is
+> a `GPU_SCAN`, and the actual reading runs through the
+> [`duckdb_native_gpu_ingestible`](scan/duckdb_native_gpu_ingestible.md), not the
+> [`duckdb_scan_executor`](scan/duckdb_scan_executor.md)/[`duckdb_scan_task`](scan/duckdb_scan_task.md)
+> path this map points to. Read this map for the *old* design and the still-true "a scan operator
+> only *describes* a scan" lesson — not the current control flow.
 
-## Where this sits
+> Paths relative to the Sirius repo root. Lines as of 2026-06-10 (intro re-verified 2026-06-26).
 
-For `SELECT ... FROM lineitem ...`, the plan generator emits a `TABLE_SCAN`; the pipeline
-converter's `construct_sirius_specific_operator`
+## Where this sits (pre-`#871`)
+
+In the **old** design, for `SELECT ... FROM lineitem ...` the plan generator emitted a
+`TABLE_SCAN`; `construct_sirius_specific_operator`
 ([`../pipeline/sirius_pipeline_converter.md`](../pipeline/sirius_pipeline_converter.md),
-converter.cpp:61) sees the table function is
-`seq_scan` and builds a **`sirius_physical_duckdb_scan`** — a sequential scan that
-borrows DuckDB's own execution engine to read the table, then hands rows to the GPU.
-(If `lineitem` were a parquet file, it'd be `PARQUET_SCAN` instead.) It is the
-`operators[0]` source of the main pipeline.
+converter.cpp:61) saw the table function was
+`seq_scan` and built a **`sirius_physical_duckdb_scan`** — a sequential scan that
+borrowed DuckDB's own execution engine to read the table, then handed rows to the GPU.
+(A parquet file became `PARQUET_SCAN` instead.) It was the `operators[0]` source of the
+main pipeline. **Post-`#871` that refinement is gone** — see the banner above.
 
 ## The key thing to notice: this file has no `execute()`
 
@@ -59,7 +73,10 @@ DUCKDB_SCAN has no input ports — it's a leaf — so it overrides with a trivia
 
 ## Takeaway
 
-Two things to retain: (1) a scan operator *describes* a scan; the **scan executor**
-(Week 5) *runs* it — so don't look for GPU work here. (2) Its `exhausted` flag is how
-a source signals completion, the mirror of the limit's `_limit_exhausted`. Next: the
-aggregate, where the target query's `SUM` actually gets computed.
+Two things to retain: (1) a scan operator *describes* a scan; something else *runs* it — so
+don't look for GPU work here. (In the live engine that runner is the
+[`gpu_ingestible`](scan/duckdb_native_gpu_ingestible.md) driven by
+[`sirius_gpu_scan_operator`](scan/sirius_gpu_scan_operator.md); in this vestigial operator's old
+design it was the `duckdb_scan_executor`.) (2) Its `exhausted` flag is how a source signals
+completion, the mirror of the limit's `_limit_exhausted`. Next: the aggregate, where the target
+query's `SUM` actually gets computed.

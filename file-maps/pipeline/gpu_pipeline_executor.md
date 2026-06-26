@@ -21,9 +21,10 @@ GPU" into actual work: reserve memory, pick a stream, dispatch to a worker threa
 out-of-memory, and schedule whatever comes next.
 
 It inherits from **`itask_executor`** (`src/include/parallel/task_executor.hpp`), the
-shared base for all three executor kinds (`gpu_pipeline_executor`, `duckdb_scan_executor`
-[`../op/scan/duckdb_scan_executor.md`](../op/scan/duckdb_scan_executor.md), and the
-downgrade executor). The base provides the thread pool, queue, `_running` flag, and
+shared base for the executor kinds (`gpu_pipeline_executor` and the downgrade executor;
+plus the now-vestigial `duckdb_scan_executor`
+[`../op/scan/duckdb_scan_executor.md`](../op/scan/duckdb_scan_executor.md), which post-`#871`
+the scheduler no longer builds). The base provides the thread pool, queue, `_running` flag, and
 `start/stop/schedule/drain_and_wait`; subclasses implement `manager_loop()` and optional
 per-thread init. So when you read this, you're reading the **GPU specialization** of a
 template the scan/downgrade executors also fill in.

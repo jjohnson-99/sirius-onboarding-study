@@ -14,8 +14,12 @@ scan FILTER→PROJECTION gather ticket (see
 plan dispatcher calls (see [`sirius_physical_plan_generator.md`](sirius_physical_plan_generator.md)).
 It turns a DuckDB `LogicalGet` (a table read, possibly with pushed-down projection and filters)
 into a Sirius scan operator — `sirius_physical_table_scan`
-([`../op/sirius_physical_table_scan.md`](../op/sirius_physical_table_scan.md)), refined later
-into `DUCKDB_SCAN` or a `GPU_PARQUET_SCAN` depending on the table function.
+([`../op/sirius_physical_table_scan.md`](../op/sirius_physical_table_scan.md)), which post-`#871`
+the converter's `split_table_scan_source` rewrites into a unified `GPU_SCAN`
+([`../op/scan/sirius_gpu_scan_operator.md`](../op/scan/sirius_gpu_scan_operator.md)) carrying a
+per-format `gpu_ingestible` (`parquet_gpu_ingestible` for parquet, `duckdb_native_gpu_ingestible`
+for `seq_scan`). *(Pre-`#871` it was instead refined into `DUCKDB_SCAN` / `GPU_PARQUET_SCAN`
+operator subtypes — now vestigial.)*
 
 Its single most important output for the ticket is **`projection_ids`**: it decides which read
 columns are output vs read-only-for-filtering, and bakes that into the operator.

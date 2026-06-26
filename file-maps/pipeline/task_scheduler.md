@@ -36,8 +36,12 @@ SQL semantics.
 `task_scheduler` **owns the sub-executors** and routes work between them:
 - one **`gpu_pipeline_executor` per GPU** ([`gpu_pipeline_executor.md`](gpu_pipeline_executor.md))
   — runs pipeline tasks on a device.
-- one **`duckdb_scan_executor`** ([`../op/scan/duckdb_scan_executor.md`](../op/scan/duckdb_scan_executor.md))
-  — runs scan tasks (host I/O).
+- ~~one **`duckdb_scan_executor`** — runs scan tasks (host I/O).~~ **Removed post-`#871`**
+  (re-verified 2026-06-26): the ctor no longer takes a `scan_cfg` and builds no scan executor;
+  GPU scan input now comes from the [`scan_manager`](../scan_manager/sirius_scan_manager.md) +
+  [`sirius_gpu_scan_operator`](../op/scan/sirius_gpu_scan_operator.md), whose tasks run on the
+  same per-GPU `gpu_pipeline_executor`s. ([`duckdb_scan_executor`](../op/scan/duckdb_scan_executor.md)
+  is now vestigial.)
 - it holds a `task_creator*` ([`../creator/task_creator.md`](../creator/task_creator.md)),
   the component that *decides which operator becomes the next task*.
 - a `completion_handler` (promise/future) is how "query done" travels back to the engine.
@@ -106,7 +110,7 @@ hands back) is in
 
 | Method (signature) | Line | Role |
 |---|---|---|
-| `task_scheduler(gpu_cfg, scan_cfg, mem_mgr, topology, downgrade)` | 40 | builds one `gpu_pipeline_executor` per GPU + the `duckdb_scan_executor`. |
+| `task_scheduler(gpu_cfg, mem_mgr, telemetry_context, topology, downgrade)` | 40 | builds one `gpu_pipeline_executor` per GPU. *(Post-`#871`: no `scan_cfg` param and **no `duckdb_scan_executor`** — verified 2026-06-26.)* |
 | `void start()` | 110 | **one-time, at context init** (not per query): start each GPU sub-executor, then `_management_thread = std::thread(&task_scheduler::management_eventloop, this)` (cpp 117). After this the matcher thread is alive and parked on the channel. |
 | `void prepare_for_query(query)` | 147 | **the per-query setup** (called from `SiriusContext::create_query`, *before* `start_query`): drain leftover tasks from the prior query (150), store `_query` (155), **create the `completion_handler` (157) and hand it to each GPU executor (161)**, reset the (deprecated) RR counter (168). |
 | `std::future<void> start_query()` | 171 | **the trigger — tiny.** Just `_task_creator->schedule(scans.front())` (176, drop the first scan in) and `return _completion_handler->get_awaitable()` (178) — the future the engine blocks on. *All* setup already happened in `prepare_for_query`; this only ignites the cascade. |

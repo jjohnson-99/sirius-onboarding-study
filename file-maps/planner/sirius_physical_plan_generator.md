@@ -72,8 +72,9 @@ to internalize the supported/unsupported boundary — it *is* Sirius's feature s
 
 `SELECT l_returnflag, SUM(l_quantity) FROM lineitem GROUP BY l_returnflag` produces a
 logical tree roughly `AGGREGATE_AND_GROUP_BY → GET(lineitem)`. The switch routes:
-`LOGICAL_GET` → `TABLE_SCAN` (later refined to `DUCKDB_SCAN` by the engine, since
-lineitem is a DuckDB table — `seq_scan`), and `LOGICAL_AGGREGATE_AND_GROUP_BY` →
+`LOGICAL_GET` → `TABLE_SCAN` (post-`#871` rewritten to `GPU_SCAN` + `duckdb_native_gpu_ingestible`
+by the converter's `split_table_scan_source`, since lineitem is a DuckDB table — `seq_scan`; this
+*used* to refine to `DUCKDB_SCAN`), and `LOGICAL_AGGREGATE_AND_GROUP_BY` →
 `HASH_GROUP_BY` (it has a GROUP BY). The Days 4–5 reading uses the *ungrouped* sibling
 as the simpler representative — same builder file, same two-phase shape.
 

@@ -43,22 +43,29 @@ manager_loop()                                   :203
    ├─ req = _task_creation_queue.pop()
    ├─ node = get_operator_for_next_task(req.node) :220  ─ follow the hint chain (recursion) ─┐
    ├─ if node == nullptr: continue                                                            │
-   └─ build + dispatch the right task kind:                                                   │
-        ├ DUCKDB_SCAN  → duckdb_scan_task   ─▶ scan_executor                                  │
-        ├ PARQUET_SCAN → one parquet_scan_task per row-group partition ─▶ scan_executor       │
-        └ GPU operator → loop while ports non-empty:                                          │
+   └─ build + dispatch (post-#871: ONE task kind — gpu_pipeline_task :393):                   │
+        └ GPU operator (incl. GPU_SCAN sources) → loop while ports non-empty:                 │
               mark_task_created()   (BEFORE popping — closes a finished/!finished race)        │
-              data = node->get_next_task_input_data()                                          │
+              data = node->get_next_task_input_data()  :244                                    │
               if data ─▶ gpu_pipeline_task ─▶ task_scheduler->schedule()                       │
               else      mark_task_completed()                                                  │
                                                                                               │
 get_operator_for_next_task(node)                 :135  ◀───────────────────────────────────────┘
-├─ PARQUET_SCAN special-case: ready iff has_more_partitions()
-├─ hint = node->get_next_task_hint()                    (base impl in sirius_physical_operator.cpp)
+├─ hint = node->get_next_task_hint()             :140   (base impl in sirius_physical_operator.cpp)
 │     ├ READY               → return hint.producer      (make a task from this op)
 │     └ WAITING_FOR_INPUT   → recurse on hint.producer  :151  (go deeper upstream)
-└─ DUCKDB_SCAN special-case: if drained/!can_create_more → nullptr
+└─ (pure hint-chain recursion — no scan special-cases)
 ```
+
+> **Post-`#871` (re-verified 2026-06-26):** the pre-`#871` per-scan-kind dispatch is **gone**.
+> `task_creator.cpp` no longer references `DUCKDB_SCAN`, `duckdb_scan_task`, or `parquet_scan_task`
+> at all — it builds only `gpu_pipeline_task` (`:393`), and `get_operator_for_next_task` (`:135`)
+> is a pure hint-chain recursion with no `PARQUET_SCAN`/`DUCKDB_SCAN` special-cases. Scan sources
+> are now the unified `GPU_SCAN` ([`../op/scan/sirius_gpu_scan_operator.md`](../op/scan/sirius_gpu_scan_operator.md)),
+> whose `get_next_task_hint` (READY while its `split_connector` is open) and
+> `get_next_task_input_data` (pull a split via the ingestible) carry the readiness logic that the
+> old `PARQUET_SCAN`/`DUCKDB_SCAN` special-cases used to. Per-row-group fan-out now happens on the
+> producer side in the [`scan_manager`](../scan_manager/sirius_scan_manager.md), not here.
 
 The `mark_task_created()` **before** `get_next_task_input_data()` is a deliberate race
 fix: it prevents the pipeline from looking "finished" in the gap between checking for data
@@ -117,11 +124,11 @@ is next, whether the scan is drained) across the many tasks that operator spawns
 - **`task_creation_hint` / `TaskCreationHint`** *(Sirius; in
   `sirius_physical_operator.hpp`)* — `{READY, WAITING_FOR_INPUT_DATA}` + a `producer*`.
   **Think:** "an operator's answer to 'can you run? if not, who feeds you?'"
-- **`duckdb_scan_task` / `parquet_scan_task` / `gpu_pipeline_task`** *(Sirius)* — the three
-  concrete task kinds this file builds and dispatches. **Think:** "the creator's three
-  output shapes; scans go to the scan executor, everything else to the scheduler." The
-  `gpu_pipeline_task` is mapped in
-  [`../pipeline/gpu_pipeline_task.md`](../pipeline/gpu_pipeline_task.md).
+- **`gpu_pipeline_task`** *(Sirius)* — **post-`#871` the only** task kind this file builds and
+  dispatches (`:393`); everything, including `GPU_SCAN` sources, runs through it to the scheduler.
+  Mapped in [`../pipeline/gpu_pipeline_task.md`](../pipeline/gpu_pipeline_task.md). *(The
+  pre-`#871` `duckdb_scan_task` / `parquet_scan_task` kinds — dispatched to a separate scan
+  executor — are no longer referenced here; see the post-`#871` note above.)*
 - **`can_create_more_tasks()` / `has_processed_all_tasks()`** *(Sirius; operator hooks)* —
   exhaustion signals (base throws; sources override). **Think:** "is this source out of
   work / are its tasks all done."
