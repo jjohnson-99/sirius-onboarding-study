@@ -13,10 +13,11 @@ FILTER→PROJECTION gather ticket (see
 A `gpu_ingestible` is the per-source object the unified `sirius_gpu_scan_operator` drives to
 turn a table source into GPU batches: it provides **splits** (row-group ranges) and a
 **post-read filter+projection** pass. `duckdb_native_gpu_ingestible` is the variant for the
-duckdb-native parquet decoder path (siblings: `parquet_gpu_ingestible`,
-`pinned_table_gpu_ingestible`). It is the GPU-native counterpart to the DUCKDB-path
-[`../sirius_physical_table_scan.md`](../sirius_physical_table_scan.md) — same filter+project
-logic, fused into one method instead of an operator `execute()`.
+duckdb-native base-table `seq_scan` path (siblings: `parquet_gpu_ingestible`,
+`pinned_table_gpu_ingestible` — all three carry a `post_filter_and_project`). This is the **live**
+home of the scan filter+project post-`#871`; the older
+[`../sirius_physical_table_scan.md`](../sirius_physical_table_scan.md) `execute()` is a bypassed
+copy of the same logic.
 
 ## Functions that matter
 
@@ -46,8 +47,9 @@ produces the pure-filter columns; `:320` drops them. The fix is to slice `src->v
 
 ## Takeaway
 
-Two scan call sites do FILTER-then-PROJECTION with the same gather-then-drop waste: this one
-(`post_filter_and_project`) and the DUCKDB-path operator `execute()`. Both already hold the
+The live scan filter+project is `post_filter_and_project` here (and its two sibling ingestibles);
+the `sirius_physical_table_scan::execute()` copy is bypassed post-`#871`. It already holds the
 keep-set (here as `output_arity`); the ticket just applies it one step earlier. Read alongside
 [`scan_plan.md`](scan_plan.md) (where output vs pure-filter is decided in longhand) and
-[`../sirius_physical_table_scan.md`](../sirius_physical_table_scan.md) (the sibling site).
+[`../sirius_physical_table_scan.md`](../sirius_physical_table_scan.md) (the bypassed copy of the
+same logic).
