@@ -67,9 +67,10 @@ read+decode to the ingestible the operator drives.
 - **`parquet_bind_result`** *(Sirius, hpp)* — `describe_parquet` output: `return_types`,
   `names`, `object_size`, `total_num_rows` for the table function's bind out-params.
 - **`split_provider`** *(Sirius)* — the per-op worker driver this starts; produces splits onto
-  the connector. See [`split_provider.cpp`](../../../src/scan_manager/split_provider.cpp).
+  the connector. See [`split_provider`](split_provider.md).
 - **`split_connector`** *(Sirius)* — the hand-off queue between provider workers and the
-  operator's consumer; `close(exception_ptr)` carries both EOF and errors.
+  operator's consumer; `close(exception_ptr)` carries both EOF and errors. See
+  [`split_connector`](split_connector.md).
 - **`gpu_ingestible` / `gpu_ingestible_factory`** *(Sirius)* — the per-source decode+filter
   object and its builder. The factory borrows `_pinned_entries` (declared last so its ctor
   reference binds to a fully-constructed member). See

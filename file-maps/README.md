@@ -108,6 +108,11 @@ CONSUMER  sirius_gpu_scan_operator::execute(split)             [op/scan/sirius_g
    materialize_table  ──▶  (skip if reader already did it)  post_filter_and_project  ──▶ data_batch
 ```
 
+The two named primitives in that diagram have their own maps: the
+[`split_provider`](scan_manager/split_provider.md) (the producer driver that `run()`s the ingestible
+and dispatches one task per batch) and the [`split_connector`](scan_manager/split_connector.md) (the
+friend-gated hand-off queue — next-split / clean-EOF / producer-error in one `get_next_split` call).
+
 The **ingestible is the polymorphic seam** — same `io::gpu_ingestible` interface, three
 implementations the [factory](scan_manager/sirius_scan_manager.md) picks between, and **where the
 filter/project actually runs differs per implementation** (this is the crux the FILTER→PROJECTION
@@ -163,7 +168,7 @@ walkthrough's mermaid diagram shows the same flow with the runtime (not reading)
 | **Expressions** | [expression/ast](expression/ast.md) (the `sirius::ast::node` AST + `from_duckdb` — producer entry), [expression_executor/gpu_expression_executor](expression_executor/gpu_expression_executor.md) (FILTER/PROJECTION compute), [expression_executor/gpu_expression_translator](expression_executor/gpu_expression_translator.md) (mixed-join AST) |
 | **Scheduler tier** | [pipeline/task_scheduler](pipeline/task_scheduler.md) (where/when), [pipeline/gpu_pipeline_executor](pipeline/gpu_pipeline_executor.md) (per-GPU dispatch), [pipeline/gpu_pipeline_task](pipeline/gpu_pipeline_task.md) (the resumable task it runs), [pipeline/sirius_pipeline](pipeline/sirius_pipeline.md) (the runnable unit + completion bookkeeping), [creator/task_creator](creator/task_creator.md) (what runs next) |
 | **Scan** | [op/scan/sirius_gpu_scan_operator](op/scan/sirius_gpu_scan_operator.md) (unified `GPU_SCAN` source: pull splits → drive ingestible), [op/scan/duckdb_scan_executor](op/scan/duckdb_scan_executor.md) (host-I/O scan executor + cache), [op/scan/duckdb_scan_task](op/scan/duckdb_scan_task.md) (CPU-staging scan task: DuckDB table function → pinned host batch; **vestigial post-`#871`**), [op/scan/duckdb_native_gpu_ingestible](op/scan/duckdb_native_gpu_ingestible.md) (native decoder ingestible + `post_filter_and_project`), [op/scan/parquet_gpu_ingestible](op/scan/parquet_gpu_ingestible.md) (parquet fresh-read ingestible; filter in `materialize_table`, assembly-only post), [op/scan/pinned_table_gpu_ingestible](op/scan/pinned_table_gpu_ingestible.md) (pinned-cache ingestible; GPU/HOST tier, skips `materialize_table`), [op/scan/scan_plan](op/scan/scan_plan.md) (read/output layout + pure-filter classification) |
-| **Scan-manager** | [scan_manager/sirius_scan_manager](scan_manager/sirius_scan_manager.md) (split-production engine: per-query ingestible build + fire-and-forget split workers; owns IO backends) |
+| **Scan-manager** | [scan_manager/sirius_scan_manager](scan_manager/sirius_scan_manager.md) (split-production engine: per-query ingestible build + fire-and-forget split workers; owns IO backends), [scan_manager/split_provider](scan_manager/split_provider.md) (per-op producer driver: `run()`s the ingestible, one async task per batch, GPU placement), [scan_manager/split_connector](scan_manager/split_connector.md) (producer↔consumer hand-off queue: next-split / EOF / error) |
 | **Memory & degradation** | [memory/sirius_memory_reservation_manager](memory/sirius_memory_reservation_manager.md) (tiers/reservations), [downgrade/downgrade_executor](downgrade/downgrade_executor.md) (spilling), [fallback](fallback.md) (CPU fallback) |
 
 Full one-line descriptions: the [top-level README](README.md). Which maps carry a call
